@@ -16,3 +16,6 @@ build/
 # Ignore logs & temp files
 *.log
 .DS_Store
+
+# Ignore reference documents
+MasterPrompt.txt
