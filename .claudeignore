@@ -1,0 +1,18 @@
+# Ignore dependencies & builds
+node_modules/
+vendor/
+.venv/
+dist/
+build/
+
+# Ignore large/unnecessary assets
+*.png
+*.jpg
+*.mp4
+*.svg
+*.csv
+*.json
+
+# Ignore logs & temp files
+*.log
+.DS_Store

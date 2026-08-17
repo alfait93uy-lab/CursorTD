@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tower Defense</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="game-canvas"></canvas>
+
+  <button id="spawn-btn" type="button" title="Spawn a test enemy">Spawn Enemy (Space)</button>
+  <button id="wave-btn" type="button" title="Send the next wave (F1)">Send Wave (F1)</button>
+  <button id="skill-tree-btn" type="button" title="Open Skill Tree (K)">Skill Tree (K)</button>
+  <div id="xp-display">XP: 30</div>
+  <div id="wave-indicator">Wave: —</div>
+  <div id="phase-indicator">Phase: Placement</div>
+
+  <!-- Tower bar — populated dynamically from unlocked skills -->
+  <div id="tower-bar"></div>
+
+  <!-- Skill Tree overlay -->
+  <div id="skill-tree-panel" class="hidden" aria-hidden="true">
+    <div class="skill-tree-content">
+      <h2 class="skill-tree-title">Skill Tree</h2>
+      <p id="skill-tree-xp" class="skill-tree-xp">XP: 30</p>
+      <p class="skill-tree-hint">Unlock towers to place them on the map. Each node costs 10 XP.</p>
+      <div id="skill-tree-nodes" class="skill-tree-nodes"></div>
+      <button id="skill-tree-close" type="button" class="skill-tree-close">Back to Game</button>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
