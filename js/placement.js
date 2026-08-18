@@ -33,6 +33,13 @@ export function getTowerAtTile(col, row, ignoreTower = null) {
   return null;
 }
 
+/** @returns {number} Count of placed towers of a given type, excluding one (e.g. while moving it). */
+export function countTowersOfType(typeId, ignoreTower = null) {
+  return state.towers.list.filter(
+    (t) => t.typeId === typeId && t !== ignoreTower
+  ).length;
+}
+
 /** True if any orthogonally adjacent tile is terrain-blocked (painted). */
 export function isAdjacentToBlockedTile(col, row) {
   for (const [dc, dr] of PATH_NEIGHBORS) {
@@ -54,6 +61,7 @@ export function isAdjacentToBlockedTile(col, row) {
  */
 export function canPlaceTower(x, y, typeId, ignoreTower = null) {
   if (!isTowerUnlocked(typeId)) return false;
+  if (countTowersOfType(typeId, ignoreTower) >= CONFIG.TOWER_TYPES[typeId].maxCount) return false;
 
   const { col, row } = worldToTile(x, y);
 
@@ -69,6 +77,7 @@ export function canPlaceTower(x, y, typeId, ignoreTower = null) {
 /** Place a new tower and add it to the list. */
 export function placeTower(typeId, x, y) {
   state.towers.list.push(new Tower(typeId, x, y));
+  renderTowerBar();
 }
 
 /** @returns {Tower|null} Topmost tower under the cursor, if any. */
@@ -141,10 +150,19 @@ export function renderTowerBar() {
     btn.dataset.towerType = typeId;
     btn.title = `${def.label} — click to select, then place on map`;
 
+    const count = countTowersOfType(typeId);
+    const atCap = count >= def.maxCount;
+
     btn.innerHTML = `
       <span class="tower-btn-icon tower-icon-${typeId}"></span>
       <span class="tower-btn-label">${def.label}</span>
+      <span class="tower-btn-count">${count}/${def.maxCount}</span>
     `;
+
+    if (atCap) {
+      btn.classList.add("at-cap");
+      btn.disabled = true;
+    }
 
     if (typeId === state.towers.placementTypeId) {
       btn.classList.add("selected");

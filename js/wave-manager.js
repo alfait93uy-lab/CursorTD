@@ -8,6 +8,7 @@ import { CONFIG, GamePhase } from "./config.js";
 import { state } from "./state.js";
 import { getActiveSpawnPoints, spawnEnemyFromSpawn } from "./spawning.js";
 import { isPlacementPhase, setGamePhase, updateWaveUI, updatePhaseUI } from "./game-phase.js";
+import { healFortForWave, isFortDestroyed } from "./fort.js";
 
 /** @returns {object|null} Next wave config, or null if all waves are done. */
 export function getNextWaveConfig() {
@@ -48,6 +49,7 @@ export function canStartWave() {
   return (
     isPlacementPhase() &&
     !state.wave.active &&
+    !isFortDestroyed() &&
     getNextWaveConfig() !== null
   );
 }
@@ -58,6 +60,8 @@ export function startNextWave() {
 
   const waveConfig = getNextWaveConfig();
   const wave = state.wave;
+
+  healFortForWave();
 
   wave.active = true;
   wave.currentWaveNumber = waveConfig.number;

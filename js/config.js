@@ -43,6 +43,7 @@ export const CONFIG = {
       hp: 100,
       speed: 140,
       xpReward: 5,
+      fortDamage: 5,
       color: "#e74c3c",
     },
     tough: {
@@ -51,6 +52,7 @@ export const CONFIG = {
       hp: 200,
       speed: 110,
       xpReward: 12,
+      fortDamage: 10,
       color: "#8e44ad",
     },
   },
@@ -92,6 +94,9 @@ export const CONFIG = {
     null,
   ],
   FORT: { col: 46, row: 19 },
+  // --- Fort HP system ---
+  FORT_MAX_HP: 30,
+  FORT_WAVE_REGEN: 5,
   MARKER_COLORS: {
     spawn: "#9b59b6",
     fort: "#f1c40f",
@@ -114,6 +119,7 @@ export const CONFIG = {
     slayer: {
       id: "slayer",
       label: "Slayer",
+      maxCount: 3, // base cap; skill tree can raise this later
       radius: 28,
       range: 200,
       damage: 22,
@@ -126,6 +132,7 @@ export const CONFIG = {
     spearman: {
       id: "spearman",
       label: "Spearman",
+      maxCount: 3, // base cap; skill tree can raise this later
       radius: 28,
       range: 256,
       damage: 16,
@@ -138,6 +145,7 @@ export const CONFIG = {
     striker: {
       id: "striker",
       label: "Striker",
+      maxCount: 3, // base cap; skill tree can raise this later
       radius: 26,
       range: 220,
       damage: 12,
@@ -149,6 +157,7 @@ export const CONFIG = {
     marksman: {
       id: "marksman",
       label: "Marksman",
+      maxCount: 3, // base cap; skill tree can raise this later
       radius: 26,
       range: 320,
       damage: 20,

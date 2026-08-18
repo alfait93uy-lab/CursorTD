@@ -57,6 +57,13 @@ export const state = {
     spawningComplete: false,
   },
 
+  /** Fort health */
+  fort: {
+    hp: CONFIG.FORT_MAX_HP,
+    maxHp: CONFIG.FORT_MAX_HP,
+    destroyed: false,
+  },
+
   /** Player progression */
   player: {
     xp: CONFIG.STARTING_XP,

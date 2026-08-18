@@ -7,6 +7,7 @@ import { CONFIG } from "./config.js";
 import { state } from "./state.js";
 import { tileToWorldCenter } from "./coords.js";
 import { awardXp, getEnemyXpReward } from "./skill-tree.js";
+import { damageFort } from "./fort.js";
 
 export class Enemy {
   /**
@@ -28,6 +29,7 @@ export class Enemy {
     this.radius = CONFIG.TILE_SIZE * 0.32;
     this.maxHp = typeDef.hp;
     this.hp = typeDef.hp;
+    this.fortDamage = typeDef.fortDamage;
     this.dead = false;
     this.reachedFort = false;
 
@@ -67,6 +69,9 @@ export class Enemy {
         this.x = target.x;
         this.y = target.y;
         this.reachedFort = true;
+        // Hit the Fort once, then remove this enemy (no XP — it wasn't killed).
+        damageFort(this.fortDamage);
+        this.dead = true;
         return;
       }
       this.waypointIndex++;

@@ -8,6 +8,7 @@ import { state } from "./state.js";
 import { findPath } from "./pathfinding.js";
 import { Enemy } from "./enemy.js";
 import { isPlacementPhase, setGamePhase } from "./game-phase.js";
+import { isFortDestroyed } from "./fort.js";
 
 export function getActiveSpawnPoints() {
   return CONFIG.SPAWN_POINTS.filter((spawn) => spawn !== null);
@@ -48,6 +49,8 @@ export function spawnEnemyFromSpawn(spawnSlot, typeId = "basic", isWaveEnemy = f
 
 /** Manual test spawn — not part of a wave. Enters combat so towers can attack. */
 export function spawnTestEnemy() {
+  if (isFortDestroyed()) return;
+
   const spawnSlot = state.nextSpawnIndex;
   state.nextSpawnIndex++;
 

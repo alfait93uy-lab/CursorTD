@@ -15,6 +15,7 @@ import { updatePhaseUI, updateWaveUI, isCombatPhase } from "./game-phase.js";
 import { updateCamera, clampCamera } from "./camera.js";
 import { updateWaveManager } from "./wave-manager.js";
 import { render } from "./render.js";
+import { updateFortUI, isFortDestroyed } from "./fort.js";
 
 function init() {
   resizeCanvas();
@@ -23,10 +24,14 @@ function init() {
   setupTowerBar();
   setupSkillTree();
   updateXpUI();
+  updateFortUI();
   renderTowerBar();
   updatePhaseUI();
   updateWaveUI();
   window.addEventListener("resize", onResize);
+  document.getElementById("game-over-reload").addEventListener("click", () => {
+    window.location.reload();
+  });
   requestAnimationFrame(gameLoop);
 }
 
@@ -72,13 +77,16 @@ function gameLoop(timestamp) {
   state.lastFrameTime = timestamp;
 
   updateCamera(dt);
-  updateEnemies(dt);
 
-  if (isCombatPhase()) {
-    updateWaveManager(dt);
-    updateTowers(dt);
-    updateProjectiles(dt);
-    cleanupCombatEntities();
+  if (!isFortDestroyed()) {
+    updateEnemies(dt);
+
+    if (isCombatPhase()) {
+      updateWaveManager(dt);
+      updateTowers(dt);
+      updateProjectiles(dt);
+      cleanupCombatEntities();
+    }
   }
 
   render();
