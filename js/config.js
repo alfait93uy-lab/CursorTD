@@ -173,6 +173,67 @@ export const CONFIG = {
 CONFIG.MAP_WIDTH = CONFIG.MAP_COLS * CONFIG.TILE_SIZE;
 CONFIG.MAP_HEIGHT = CONFIG.MAP_ROWS * CONFIG.TILE_SIZE;
 
+// --- Talent trees (per-tower deeper progression, spent from the same XP pool) ---
+CONFIG.TALENT_POINT_COST = 5;
+
+CONFIG.TALENT_TREES = {
+  slayer: {
+    tiers: [
+      {
+        id: "root",
+        nodes: [{ id: "slayer_root", label: "Slayer", maxPoints: 1 }],
+        unlock: { type: "sum", threshold: 1 },
+      },
+      {
+        id: "branch1",
+        nodes: [
+          { id: "dmg1", label: "Damage", maxPoints: 5 },
+          { id: "aoe", label: "AoE", maxPoints: 3 },
+          { id: "bleed", label: "Bleed", maxPoints: 3 },
+        ],
+        unlock: { type: "sum", threshold: 5 },
+      },
+      {
+        id: "slayer2",
+        nodes: [{ id: "slayer2", label: "Slayer", maxPoints: 1 }],
+        unlock: { type: "sum", threshold: 1 },
+      },
+      {
+        id: "branch2",
+        nodes: [
+          { id: "dmg2", label: "Damage", maxPoints: 5 },
+          { id: "attkspeed", label: "AttkSpeed", maxPoints: 2 },
+          { id: "raoe", label: "RAoE", maxPoints: 2 },
+        ],
+        unlock: { type: "sum", threshold: 5 },
+      },
+      {
+        id: "specials",
+        exclusive: true, // choose ONE of these — picking one locks the other
+        nodes: [
+          { id: "special1", label: "1Special", maxPoints: 1 },
+          { id: "special2", label: "2Special", maxPoints: 1 },
+        ],
+        unlock: { type: "sum", threshold: 1 },
+      },
+      {
+        id: "final",
+        nodes: [
+          { id: "dmg3", label: "Damage", maxPoints: 2 },
+          { id: "crit", label: "Crit", maxPoints: 2 },
+        ],
+        unlock: { type: "each", min: 1 }, // both need at least 1 point
+      },
+      {
+        id: "ultimate",
+        nodes: [{ id: "ultimate", label: "Ultimate", maxPoints: 1 }],
+        unlock: null, // last tier
+      },
+    ],
+  },
+  // spearman / striker / marksman talent trees not designed yet
+};
+
 // --- Main Menu: map select ---
 // designWaveCount is the spec target (10/map); actual playable wave count
 // right now is CONFIG.WAVES.length (only Map 1 has real wave data so far).

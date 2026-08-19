@@ -28,7 +28,7 @@ export class Tower {
     // Brief visual flash timer for melee attacks (cone/directional/aoe), since
     // those deal damage instantly instead of firing a projectile.
     this.attackFlashTimer = 0;
-    this.attackFlashDuration = 0.15;
+    this.attackFlashDuration = 0.2;
   }
 
   /** @returns {boolean} True if this tower type aims (rotatable cone/directional). */
@@ -216,17 +216,33 @@ export class Tower {
       drawCtx.stroke();
     }
 
-    // Brief white flash on melee hit (cone/directional/aoe placeholder "attack")
-    if (this.attackFlashTimer > 0 && !ghost) {
-      drawCtx.globalAlpha = this.attackFlashTimer / this.attackFlashDuration;
-      drawCtx.strokeStyle = "#fff";
-      drawCtx.lineWidth = 3 / state.camera.zoom;
-      drawCtx.beginPath();
-      drawCtx.arc(this.x, this.y, r * 1.5, 0, Math.PI * 2);
-      drawCtx.stroke();
-    }
+    // Attack flash: fills the whole cone/circle area, visible even with
+    // no enemy in it — this is the "swing" confirmation that the tower
+    // is actively attacking on cooldown, not just when something dies.
+    if (!ghost) this.drawAttackFlash(drawCtx);
 
     drawCtx.restore();
+  }
+
+  /** @param {CanvasRenderingContext2D} drawCtx */
+  drawAttackFlash(drawCtx) {
+    if (this.attackFlashTimer <= 0) return;
+    const alpha = this.attackFlashTimer / this.attackFlashDuration;
+
+    if (this.isDirectional()) {
+      const half = this.def.coneAngle / 2;
+      drawCtx.beginPath();
+      drawCtx.moveTo(this.x, this.y);
+      drawCtx.arc(this.x, this.y, this.def.range, this.angle - half, this.angle + half);
+      drawCtx.closePath();
+      drawCtx.fillStyle = `rgba(255, 255, 255, ${0.5 * alpha})`;
+      drawCtx.fill();
+    } else if (this.def.attackType === "aoe") {
+      drawCtx.beginPath();
+      drawCtx.arc(this.x, this.y, this.def.range, 0, Math.PI * 2);
+      drawCtx.fillStyle = `rgba(255, 255, 255, ${0.4 * alpha})`;
+      drawCtx.fill();
+    }
   }
 
   /**

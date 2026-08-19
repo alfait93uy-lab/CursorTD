@@ -293,6 +293,8 @@ body {
 
 .skill-tree-content {
   width: min(720px, 92vw);
+  max-height: 88vh;
+  overflow-y: auto;
   padding: 28px 32px;
   background: rgba(22, 22, 38, 0.97);
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -686,4 +688,135 @@ body {
 /* Game screen wrapper */
 #game-screen.hidden {
   display: none;
+}
+
+/* ============================= SKILL TREE: TABS + TALENT TREE ============================= */
+
+.skill-tree-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 16px 0 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.skill-tab {
+  padding: 10px 16px;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.55);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.skill-tab:hover {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.skill-tab.active {
+  color: #fff;
+  border-bottom-color: #3498db;
+}
+
+.skill-unlock-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.skill-unlock-section .skill-node {
+  width: min(220px, 100%);
+}
+
+.talent-tree-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.talent-placeholder {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  padding: 24px 0;
+}
+
+.talent-tier {
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.talent-tier.locked {
+  opacity: 0.5;
+}
+
+.talent-tier-lock-msg {
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.talent-nodes-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.talent-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 92px;
+  padding: 10px 12px;
+  font-family: system-ui, sans-serif;
+  background: rgba(40, 40, 65, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+}
+
+.talent-node.maxed {
+  border-color: rgba(46, 204, 113, 0.6);
+  background: rgba(46, 204, 113, 0.12);
+}
+
+.talent-node-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.talent-node-points {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.talent-node-btn {
+  width: 26px;
+  height: 26px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  background: rgba(52, 152, 219, 0.35);
+  border: 1px solid rgba(52, 152, 219, 0.6);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.talent-node-btn:hover:not(:disabled) {
+  background: rgba(52, 152, 219, 0.55);
+}
+
+.talent-node-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }

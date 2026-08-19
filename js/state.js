@@ -88,8 +88,13 @@ export const state = {
     unlockedTowers: new Set(),
   },
 
+  /** Talent points spent, per tower: { slayer: { nodeId: pointsSpent } } */
+  talents: {},
+
   /** UI overlay state */
   ui: {
     skillTreeOpen: false,
+    /** Active tab in the Skill Tree panel (a tower id, e.g. "slayer") */
+    skillTreeTab: "slayer",
   },
 };
