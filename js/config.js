@@ -119,7 +119,7 @@ export const CONFIG = {
     slayer: {
       id: "slayer",
       label: "Slayer",
-      maxCount: 3, // base cap; skill tree can raise this later
+      maxCount: 1, // base cap; skill tree can raise this later
       radius: 28,
       range: 200,
       damage: 22,
@@ -132,7 +132,7 @@ export const CONFIG = {
     spearman: {
       id: "spearman",
       label: "Spearman",
-      maxCount: 3, // base cap; skill tree can raise this later
+      maxCount: 1, // base cap; skill tree can raise this later
       radius: 28,
       range: 256,
       damage: 16,
@@ -145,7 +145,7 @@ export const CONFIG = {
     striker: {
       id: "striker",
       label: "Striker",
-      maxCount: 3, // base cap; skill tree can raise this later
+      maxCount: 1, // base cap; skill tree can raise this later
       radius: 26,
       range: 220,
       damage: 12,
@@ -157,7 +157,7 @@ export const CONFIG = {
     marksman: {
       id: "marksman",
       label: "Marksman",
-      maxCount: 3, // base cap; skill tree can raise this later
+      maxCount: 1, // base cap; skill tree can raise this later
       radius: 26,
       range: 320,
       damage: 20,

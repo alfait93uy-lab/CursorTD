@@ -56,15 +56,17 @@ export class Tower {
       }
       case "aoe": {
         // Striker: instant damage to every enemy in range around itself.
+        // Always swings on cooldown — hits nothing if no enemy is in range.
         const targets = this.getEnemiesInRange();
-        if (targets.length) this.meleeAttack(targets);
+        this.meleeAttack(targets);
         break;
       }
       case "cone":
       case "directional": {
         // Slayer / Spearman: instant damage to every enemy inside the facing cone.
+        // Always swings on cooldown — hits nothing if no enemy is in the cone.
         const targets = this.getEnemiesInCone();
-        if (targets.length) this.meleeAttack(targets);
+        this.meleeAttack(targets);
         break;
       }
     }
