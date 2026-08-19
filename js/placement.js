@@ -8,7 +8,7 @@ import { CONFIG, TILE } from "./config.js";
 import { canvas, state } from "./state.js";
 import { worldToTile } from "./coords.js";
 import { isTileInBounds, getTile, isTerrainWalkable } from "./tilemap.js";
-import { PATH_NEIGHBORS } from "./pathfinding.js";
+import { PATH_NEIGHBORS, findPath } from "./pathfinding.js";
 import { Tower } from "./tower.js";
 import { isTowerUnlocked } from "./skill-tree.js";
 import { isPlacementPhase } from "./game-phase.js";
@@ -53,6 +53,36 @@ export function isAdjacentToBlockedTile(col, row) {
 }
 
 /**
+ * True if placing/moving a tower onto this tile would cut off any active
+ * spawn point's only path to the Fort. Simulates the tower by temporarily
+ * pushing a probe into the tower list, then running the real pathfinder.
+ *
+ * Cached by tile: this runs on every ghost-preview mousemove and every
+ * drag frame (up to 60/sec), and A* is too expensive to re-run that often
+ * for a tile the cursor is just sitting on. Cache invalidates naturally
+ * the moment the cursor moves to a different tile.
+ */
+let sealCheckCache = { col: null, row: null, result: false };
+
+function wouldSealPath(col, row) {
+  if (sealCheckCache.col === col && sealCheckCache.row === row) {
+    return sealCheckCache.result;
+  }
+
+  const probe = { typeId: "__probe__", getTileCoords: () => ({ col, row }) };
+  state.towers.list.push(probe);
+
+  const seals = getActiveSpawnPoints().some(
+    (spawn) => findPath(spawn.col, spawn.row, CONFIG.FORT.col, CONFIG.FORT.row) === null
+  );
+
+  state.towers.list.pop();
+
+  sealCheckCache = { col, row, result: seals };
+  return seals;
+}
+
+/**
  * Check whether a tower can be placed at a world position.
  * @param {number} x
  * @param {number} y
@@ -70,6 +100,7 @@ export function canPlaceTower(x, y, typeId, ignoreTower = null) {
   if (isReservedTile(col, row)) return false;
   if (getTowerAtTile(col, row, ignoreTower)) return false;
   if (isAdjacentToBlockedTile(col, row)) return false;
+  if (wouldSealPath(col, row)) return false;
 
   return true;
 }
