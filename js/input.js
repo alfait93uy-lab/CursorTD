@@ -25,6 +25,10 @@ import { clampCamera } from "./camera.js";
 
 export function setupInput() {
   window.addEventListener("keydown", (e) => {
+    // All game shortcuts (camera, skill tree, waves, spawning) only apply
+    // once the player has actually entered a map from the Main Menu.
+    if (state.menu.screen !== "game") return;
+
     if (e.key === "Escape") {
       if (isSkillTreeOpen()) {
         closeSkillTree();

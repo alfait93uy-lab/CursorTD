@@ -1,9 +1,10 @@
 /**
  * MAIN.JS — Entry point (loaded from index.html as type="module")
  *
- * Tower Defense — Phase 8: Real Tower Attack Behaviors
- * Wires up all the modules and runs the game loop. Game logic itself lives
- * in the other js/ files — this file should stay thin.
+ * Tower Defense — Phase 9: Main Menu
+ * Wires up all the modules. The game loop only starts once the player picks
+ * a map from the Play screen (see menu.js) — before that, only the menu is
+ * interactive.
  */
 
 import { CONFIG } from "./config.js";
@@ -16,6 +17,7 @@ import { updateCamera, clampCamera } from "./camera.js";
 import { updateWaveManager } from "./wave-manager.js";
 import { render } from "./render.js";
 import { updateFortUI, isFortDestroyed } from "./fort.js";
+import { initMenu } from "./menu.js";
 
 function init() {
   resizeCanvas();
@@ -32,6 +34,15 @@ function init() {
   document.getElementById("game-over-reload").addEventListener("click", () => {
     window.location.reload();
   });
+  initMenu(startGameLoop);
+}
+
+let gameLoopStarted = false;
+
+/** Passed to menu.js — called the first time a map is picked from Play. */
+function startGameLoop() {
+  if (gameLoopStarted) return;
+  gameLoopStarted = true;
   requestAnimationFrame(gameLoop);
 }
 
@@ -71,6 +82,13 @@ function setupSkillTree() {
 }
 
 function gameLoop(timestamp) {
+  // Defensive guard for when "quit to menu" exists in the future — right
+  // now this is always true once the loop has started.
+  if (state.menu.screen !== "game") {
+    requestAnimationFrame(gameLoop);
+    return;
+  }
+
   const dt = state.lastFrameTime
     ? Math.min((timestamp - state.lastFrameTime) / 1000, 0.1)
     : 0;

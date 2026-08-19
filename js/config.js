@@ -173,6 +173,22 @@ export const CONFIG = {
 CONFIG.MAP_WIDTH = CONFIG.MAP_COLS * CONFIG.TILE_SIZE;
 CONFIG.MAP_HEIGHT = CONFIG.MAP_ROWS * CONFIG.TILE_SIZE;
 
+// --- Main Menu: map select ---
+// designWaveCount is the spec target (10/map); actual playable wave count
+// right now is CONFIG.WAVES.length (only Map 1 has real wave data so far).
+CONFIG.MAPS = [
+  { id: "map1", label: "Map 1", designWaveCount: 10, requiresMapId: null },
+  { id: "map2", label: "Map 2", designWaveCount: 10, requiresMapId: "map1" },
+  { id: "map3", label: "Map 3", designWaveCount: 10, requiresMapId: "map2" },
+];
+
+// --- Main Menu: difficulty select (UI only for now — not yet applied to gameplay) ---
+CONFIG.DIFFICULTIES = [
+  { id: "normal", label: "Normal" },
+  { id: "hard", label: "Hard" },
+  { id: "veryhard", label: "Very Hard" },
+];
+
 // =============================================================================
 // TILE TYPES
 // =============================================================================

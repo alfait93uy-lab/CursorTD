@@ -7,36 +7,82 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <canvas id="game-canvas"></canvas>
+  <!-- ============================= MAIN MENU ============================= -->
+  <div id="menu-root">
 
-  <button id="spawn-btn" type="button" title="Spawn a test enemy">Spawn Enemy (Space)</button>
-  <button id="wave-btn" type="button" title="Send the next wave (F1)">Send Wave (F1)</button>
-  <button id="skill-tree-btn" type="button" title="Open Skill Tree (K)">Skill Tree (K)</button>
-  <div id="xp-display">XP: 30</div>
-  <div id="fort-hp-display">Fort: 30/30</div>
-  <div id="wave-indicator">Wave: —</div>
-  <div id="phase-indicator">Phase: Placement</div>
-
-  <!-- Tower bar — populated dynamically from unlocked skills -->
-  <div id="tower-bar"></div>
-
-  <!-- Game Over overlay -->
-  <div id="game-over-panel" class="hidden" aria-hidden="true">
-    <div class="game-over-content">
-      <h2 class="game-over-title">Fort Destroyed</h2>
-      <p class="game-over-hint">The Fort has fallen. Reload to try again.</p>
-      <button id="game-over-reload" type="button" class="game-over-reload">Reload</button>
+    <!-- Main Menu -->
+    <div id="screen-main" class="menu-screen">
+      <div class="menu-panel menu-panel-main">
+        <h1 class="menu-title">Tower Defense</h1>
+        <button id="menu-play-btn" type="button" class="menu-btn menu-btn-primary">Play</button>
+        <button id="menu-saves-btn" type="button" class="menu-btn">Saves</button>
+        <button id="menu-howto-btn" type="button" class="menu-btn">How to Play</button>
+      </div>
     </div>
+
+    <!-- Play: map select + difficulty -->
+    <div id="screen-play" class="menu-screen hidden">
+      <div class="menu-topbar">
+        <button id="play-back-btn" type="button" class="menu-back-btn">&larr; Back to Menu</button>
+        <div id="difficulty-select" class="difficulty-select"></div>
+      </div>
+      <h2 class="menu-section-title">Select a Map</h2>
+      <div id="maps-grid" class="maps-grid"></div>
+    </div>
+
+    <!-- Saves (placeholder — no save system yet) -->
+    <div id="screen-saves" class="menu-screen hidden">
+      <div class="menu-panel">
+        <button id="saves-back-btn" type="button" class="menu-back-btn">&larr; Back to Menu</button>
+        <h2 class="menu-section-title">Saves</h2>
+        <p class="menu-placeholder-text">No save system yet — coming in a future update.</p>
+      </div>
+    </div>
+
+    <!-- How to Play -->
+    <div id="screen-howto" class="menu-screen hidden">
+      <div class="menu-panel menu-panel-howto">
+        <button id="howto-back-btn" type="button" class="menu-back-btn">&larr; Back to Menu</button>
+        <h2 class="menu-section-title">How to Play</h2>
+        <div id="howto-content" class="howto-content"></div>
+      </div>
+    </div>
+
   </div>
 
-  <!-- Skill Tree overlay -->
-  <div id="skill-tree-panel" class="hidden" aria-hidden="true">
-    <div class="skill-tree-content">
-      <h2 class="skill-tree-title">Skill Tree</h2>
-      <p id="skill-tree-xp" class="skill-tree-xp">XP: 30</p>
-      <p class="skill-tree-hint">Unlock towers to place them on the map. Each node costs 10 XP.</p>
-      <div id="skill-tree-nodes" class="skill-tree-nodes"></div>
-      <button id="skill-tree-close" type="button" class="skill-tree-close">Back to Game</button>
+  <!-- ============================= GAME SCREEN ============================= -->
+  <div id="game-screen" class="hidden">
+    <canvas id="game-canvas"></canvas>
+
+    <button id="spawn-btn" type="button" title="Spawn a test enemy">Spawn Enemy (Space)</button>
+    <button id="wave-btn" type="button" title="Send the next wave (F1)">Send Wave (F1)</button>
+    <button id="skill-tree-btn" type="button" title="Open Skill Tree (K)">Skill Tree (K)</button>
+    <div id="xp-display">XP: 30</div>
+    <div id="fort-hp-display">Fort: 30/30</div>
+    <div id="wave-indicator">Wave: —</div>
+    <div id="phase-indicator">Phase: Placement</div>
+
+    <!-- Tower bar — populated dynamically from unlocked skills -->
+    <div id="tower-bar"></div>
+
+    <!-- Game Over overlay -->
+    <div id="game-over-panel" class="hidden" aria-hidden="true">
+      <div class="game-over-content">
+        <h2 class="game-over-title">Fort Destroyed</h2>
+        <p class="game-over-hint">The Fort has fallen. Reload to try again.</p>
+        <button id="game-over-reload" type="button" class="game-over-reload">Reload</button>
+      </div>
+    </div>
+
+    <!-- Skill Tree overlay -->
+    <div id="skill-tree-panel" class="hidden" aria-hidden="true">
+      <div class="skill-tree-content">
+        <h2 class="skill-tree-title">Skill Tree</h2>
+        <p id="skill-tree-xp" class="skill-tree-xp">XP: 30</p>
+        <p class="skill-tree-hint">Unlock towers to place them on the map. Each node costs 10 XP.</p>
+        <div id="skill-tree-nodes" class="skill-tree-nodes"></div>
+        <button id="skill-tree-close" type="button" class="skill-tree-close">Back to Game</button>
+      </div>
     </div>
   </div>
 

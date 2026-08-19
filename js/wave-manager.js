@@ -9,6 +9,7 @@ import { state } from "./state.js";
 import { getActiveSpawnPoints, spawnEnemyFromSpawn } from "./spawning.js";
 import { isPlacementPhase, setGamePhase, updateWaveUI, updatePhaseUI } from "./game-phase.js";
 import { healFortForWave, isFortDestroyed } from "./fort.js";
+import { recordWaveComplete } from "./progress.js";
 
 /** @returns {object|null} Next wave config, or null if all waves are done. */
 export function getNextWaveConfig() {
@@ -99,6 +100,10 @@ export function countActiveWaveEnemies() {
 export function completeWave() {
   const wave = state.wave;
   console.log(`Wave ${wave.currentWaveNumber} complete!`);
+
+  if (state.menu.activeMapId) {
+    recordWaveComplete(state.menu.activeMapId, wave.currentWaveNumber);
+  }
 
   wave.active = false;
   wave.currentWaveNumber = 0;

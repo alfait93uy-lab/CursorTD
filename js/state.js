@@ -64,6 +64,23 @@ export const state = {
     destroyed: false,
   },
 
+  /** Main Menu navigation + selections */
+  menu: {
+    /** 'main' | 'play' | 'saves' | 'howto' | 'game' */
+    screen: "main",
+    /** Map id currently being played, once in-game (e.g. "map1") */
+    activeMapId: null,
+    /** Selected difficulty id — UI only for now, not yet applied to gameplay */
+    difficulty: "normal",
+  },
+
+  /** Per-map progress (in-memory only — no save system yet) */
+  progress: {
+    map1: { highestWave: 0 },
+    map2: { highestWave: 0 },
+    map3: { highestWave: 0 },
+  },
+
   /** Player progression */
   player: {
     xp: CONFIG.STARTING_XP,
