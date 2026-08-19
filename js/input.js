@@ -141,17 +141,16 @@ function onCanvasMouseDown(e) {
   // Ignore map interactions that start on UI overlays
   if (isPointerOverUI(e)) return;
 
-  // --- Placement mode: left-click places a new tower (no tile painting) ---
+  // --- Placement mode: left-click places on a valid tile, or cancels otherwise ---
   if (state.towers.placementTypeId && isPlacementPhase()) {
     const snapped = snapToTileCenter(world.x, world.y);
-    if (
-      canPlaceTower(
-        snapped.x,
-        snapped.y,
-        state.towers.placementTypeId
-      )
-    ) {
+
+    if (canPlaceTower(snapped.x, snapped.y, state.towers.placementTypeId)) {
       placeTower(state.towers.placementTypeId, snapped.x, snapped.y);
+    } else {
+      // Clicking an invalid spot cancels placement — no longer forces the
+      // player to right-click just to get rid of the tower stuck to their cursor.
+      cancelTowerPlacement();
     }
     e.preventDefault();
     return;
