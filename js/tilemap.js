@@ -13,6 +13,7 @@
 import { CONFIG, TILE } from "./config.js";
 import { state } from "./state.js";
 import { getTowerAtTile } from "./placement.js";
+import { allSpawnsCanReachFort } from "./pathfinding.js";
 
 /** Create a rows x cols grid, every tile starting walkable. */
 export function createTilemap(cols, rows) {
@@ -43,4 +44,20 @@ export function isTerrainWalkable(col, row) {
 /** True if enemies can pathfind through this tile (terrain + no tower). */
 export function isWalkableForPathfinding(col, row) {
   return isTerrainWalkable(col, row) && !getTowerAtTile(col, row);
+}
+
+/**
+ * True if painting this tile BLOCKED would cut off any active spawn point's
+ * path to the Fort. Mirrors placement.js's tower-seal check, but simulates
+ * a terrain change instead of a tower (temporarily sets, tests, reverts).
+ */
+export function wouldBlockingTileSealPath(col, row) {
+  const original = getTile(col, row);
+  if (original === TILE.BLOCKED) return false; // already blocked, no change
+
+  setTile(col, row, TILE.BLOCKED);
+  const seals = !allSpawnsCanReachFort();
+  setTile(col, row, original);
+
+  return seals;
 }

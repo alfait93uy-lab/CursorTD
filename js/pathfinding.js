@@ -13,6 +13,14 @@
 
 import { CONFIG } from "./config.js";
 import { isWalkableForPathfinding } from "./tilemap.js";
+import { getActiveSpawnPoints } from "./spawning.js";
+
+/** @returns {boolean} True if every active spawn point currently has a path to the Fort. */
+export function allSpawnsCanReachFort() {
+  return getActiveSpawnPoints().every(
+    (spawn) => findPath(spawn.col, spawn.row, CONFIG.FORT.col, CONFIG.FORT.row) !== null
+  );
+}
 
 export const PATH_NEIGHBORS = [
   [0, 1],

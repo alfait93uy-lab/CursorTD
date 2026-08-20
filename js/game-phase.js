@@ -8,6 +8,7 @@ import { GamePhase } from "./config.js";
 import { state } from "./state.js";
 import { cancelTowerInteraction } from "./input.js";
 import { getNextWaveConfig, canStartWave } from "./wave-manager.js";
+import { allSpawnsCanReachFort } from "./pathfinding.js";
 
 export function isPlacementPhase() {
   return state.phase === GamePhase.PLACEMENT;
@@ -61,9 +62,15 @@ export function updateWaveUI() {
   btn.classList.remove("wave-active");
 
   if (nextWave) {
-    btn.textContent = `Send Wave ${nextWave.number} (F1)`;
-    btn.disabled = !canStartWave();
-    indicator.textContent = `Next: Wave ${nextWave.number} (MV ${nextWave.monsterValue})`;
+    if (isPlacementPhase() && !allSpawnsCanReachFort()) {
+      btn.textContent = "Path Blocked!";
+      btn.disabled = true;
+      indicator.textContent = "Clear a path to the Fort to continue";
+    } else {
+      btn.textContent = `Send Wave ${nextWave.number} (F1)`;
+      btn.disabled = !canStartWave();
+      indicator.textContent = `Next: Wave ${nextWave.number} (MV ${nextWave.monsterValue})`;
+    }
   } else {
     btn.textContent = "All Waves Complete";
     btn.disabled = true;

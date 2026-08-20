@@ -42,9 +42,18 @@ export const CONFIG = {
       monsterValue: 10,
       hp: 100,
       speed: 140,
-      xpReward: 5,
+      xpReward: 3,
       fortDamage: 5,
       color: "#e74c3c",
+    },
+    scout: {
+      id: "scout",
+      monsterValue: 8,
+      hp: 60,
+      speed: 220,
+      xpReward: 3,
+      fortDamage: 3,
+      color: "#f1c40f",
     },
     tough: {
       id: "tough",
@@ -55,32 +64,109 @@ export const CONFIG = {
       fortDamage: 10,
       color: "#8e44ad",
     },
+    elite: {
+      id: "elite",
+      monsterValue: 60,
+      hp: 450,
+      speed: 85,
+      xpReward: 30,
+      fortDamage: 25,
+      color: "#2ecc71",
+    },
   },
 
   /**
-   * Wave definitions — each wave has a Monster Value budget and spawn groups.
-   * Monster Value ≈ sum of (enemy.monsterValue × count) per group.
-   */
+ * Wave definitions — each wave has a Monster Value budget and spawn groups.
+ * Monster Value = sum of (enemy.monsterValue × count) per group.
+ * Values: basic (10), scout (8), tough (25), elite (60)
+ */
   WAVES: [
-    {
-      number: 1,
-      monsterValue: 30,
-      groups: [{ type: "basic", count: 3, spawnInterval: 1.2 }],
-    },
-    {
-      number: 2,
-      monsterValue: 65,
-      groups: [
-        { type: "basic", count: 4, spawnInterval: 1.0 },
-        { type: "tough", count: 1, spawnInterval: 1.5 },
-      ],
-    },
-    {
-      number: 3,
-      monsterValue: 110,
-      groups: [
-        { type: "basic", count: 5, spawnInterval: 0.9 },
-        { type: "tough", count: 3, spawnInterval: 1.1 },
+  {
+    number: 1,
+    monsterValue: 30, // 3 * 10
+    groups: [
+      { type: "basic", count: 3, spawnInterval: 1.2 },
+    ],
+  },
+  {
+    number: 2,
+    monsterValue: 64, // (4 * 10) + (3 * 8)
+    groups: [
+      { type: "basic", count: 4, spawnInterval: 1.0 },
+      { type: "scout", count: 3, spawnInterval: 0.8 },
+    ],
+  },
+  {
+    number: 3,
+    monsterValue: 110, // (7 * 10) + (5 * 8)
+    groups: [
+      { type: "basic", count: 7, spawnInterval: 0.9 },
+      { type: "scout", count: 5, spawnInterval: 0.7 },
+    ],
+  },
+  {
+    number: 4,
+    monsterValue: 160, // (8 * 10) + (10 * 8)
+    groups: [
+      { type: "basic", count: 8, spawnInterval: 0.8 },
+      { type: "scout", count: 10, spawnInterval: 0.6 },
+    ],
+  },
+  {
+    number: 5,
+    monsterValue: 220, // (7 * 10) + (5 * 8) + (4 * 25)
+    groups: [
+      { type: "basic", count: 7, spawnInterval: 0.8 },
+      { type: "scout", count: 5, spawnInterval: 0.6 },
+      { type: "tough", count: 4, spawnInterval: 1.2 },
+    ],
+  },
+  {
+    number: 6,
+    monsterValue: 290, // (9 * 10) + (10 * 8) + (4 * 25)
+    groups: [
+      { type: "basic", count: 9, spawnInterval: 0.7 },
+      { type: "scout", count: 10, spawnInterval: 0.5 },
+      { type: "tough", count: 4, spawnInterval: 1.1 },
+    ],
+  },
+  {
+    number: 7,
+    monsterValue: 370, // (12 * 10) + (10 * 8) + (7 * 25)
+    groups: [
+      { type: "basic", count: 12, spawnInterval: 0.7 },
+      { type: "scout", count: 10, spawnInterval: 0.5 },
+      { type: "tough", count: 7, spawnInterval: 1.0 },
+    ],
+  },
+  {
+    number: 8,
+    monsterValue: 460, // (10 * 10) + (10 * 8) + (4 * 25) + (3 * 60)
+    groups: [
+      { type: "basic", count: 10, spawnInterval: 0.6 },
+      { type: "scout", count: 10, spawnInterval: 0.4 },
+      { type: "tough", count: 4, spawnInterval: 1.0 },
+      { type: "elite", count: 3, spawnInterval: 2.5 },
+    ],
+  },
+  {
+    number: 9,
+    monsterValue: 560, // (12 * 10) + (15 * 8) + (6 * 25) + (3 * 60)
+    groups: [
+      { type: "basic", count: 12, spawnInterval: 0.5 },
+      { type: "scout", count: 15, spawnInterval: 0.4 },
+      { type: "tough", count: 6, spawnInterval: 0.9 },
+      { type: "elite", count: 3, spawnInterval: 2.2 },
+    ],
+  },
+  {
+    number: 10,
+    monsterValue: 680, // (15 * 10) + (20 * 8) + (8 * 25) + (3 * 60)
+    groups: [
+      { type: "basic", count: 15, spawnInterval: 0.5 },
+      { type: "scout", count: 20, spawnInterval: 0.3 },
+      { type: "tough", count: 8, spawnInterval: 0.8 },
+      { type: "elite", count: 3, spawnInterval: 2.0 },
       ],
     },
   ],
@@ -88,8 +174,8 @@ export const CONFIG = {
   MAX_SPAWN_POINTS: 5,
   SPAWN_POINTS: [
     { col: 2, row: 10 },
-    { col: 2, row: 28 },
-    null,
+    { col: 2, row: 12 },
+    { col: 2, row: 11 },
     null,
     null,
   ],
@@ -122,8 +208,8 @@ export const CONFIG = {
       maxCount: 1, // base cap; skill tree can raise this later
       radius: 28,
       range: 200,
-      damage: 22,
-      attackSpeed: 0.9,
+      damage: 50,
+      attackSpeed: 0.5,
       attackType: "cone",
       coneAngle: (Math.PI * 2) / 3, // 120° wide cone
       color: "#e74c3c",
@@ -132,13 +218,13 @@ export const CONFIG = {
     spearman: {
       id: "spearman",
       label: "Spearman",
-      maxCount: 1, // base cap; skill tree can raise this later
+      maxCount: 2, // base cap; skill tree can raise this later
       radius: 28,
-      range: 256,
+      range: 356,
       damage: 16,
       attackSpeed: 1.2,
       attackType: "directional",
-      coneAngle: Math.PI / 6, // 30° narrow cone (thrust line)
+      coneAngle: Math.PI / 10, // 30° narrow cone (thrust line)
       color: "#2ecc71",
     },
     // Melee, circular AoE around itself — no direction needed.
@@ -147,8 +233,8 @@ export const CONFIG = {
       label: "Striker",
       maxCount: 1, // base cap; skill tree can raise this later
       radius: 26,
-      range: 220,
-      damage: 12,
+      range: 180,
+      damage: 10,
       attackSpeed: 2.0,
       attackType: "aoe",
       color: "#e67e22",
@@ -157,13 +243,13 @@ export const CONFIG = {
     marksman: {
       id: "marksman",
       label: "Marksman",
-      maxCount: 1, // base cap; skill tree can raise this later
+      maxCount: 2, // base cap; skill tree can raise this later
       radius: 26,
-      range: 320,
-      damage: 20,
+      range: 450,
+      damage: 23,
       attackSpeed: 1.0,
       attackType: "targeted",
-      projectileSpeed: 550,
+      projectileSpeed: 850,
       projectileColor: "#3498db",
       color: "#3498db",
     },

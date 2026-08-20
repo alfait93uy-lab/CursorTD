@@ -19,7 +19,7 @@ import { isPlacementPhase } from "./game-phase.js";
 import { isSkillTreeOpen, closeSkillTree, toggleSkillTree } from "./skill-tree.js";
 import { startNextWave } from "./wave-manager.js";
 import { spawnTestEnemy } from "./spawning.js";
-import { setTile } from "./tilemap.js";
+import { setTile, wouldBlockingTileSealPath } from "./tilemap.js";
 import { clamp } from "./utils.js";
 import { clampCamera } from "./camera.js";
 
@@ -147,11 +147,10 @@ function onCanvasMouseDown(e) {
 
     if (canPlaceTower(snapped.x, snapped.y, state.towers.placementTypeId)) {
       placeTower(state.towers.placementTypeId, snapped.x, snapped.y);
-    } else {
-      // Clicking an invalid spot cancels placement — no longer forces the
-      // player to right-click just to get rid of the tower stuck to their cursor.
-      cancelTowerPlacement();
     }
+    // Whether placement succeeded or the spot was invalid, the ghost
+    // shouldn't keep following the cursor afterward — exit placement mode.
+    cancelTowerPlacement();
     e.preventDefault();
     return;
   }
@@ -276,6 +275,7 @@ function isPointerOverUI(e) {
 function beginTilePaint(e, tileState) {
   const { col, row } = screenToTile(e.clientX, e.clientY);
   if (getTowerAtTile(col, row)) return;
+  if (tileState === TILE.BLOCKED && wouldBlockingTileSealPath(col, row)) return;
   state.paint = { tileState, lastCol: col, lastRow: row };
   setTile(col, row, tileState);
 }
@@ -303,8 +303,11 @@ function paintLine(col0, row0, col1, row1, tileState) {
   let err = dx - dy;
 
   while (true) {
-    // Only paint terrain — tower occupancy is tracked separately
-    if (!getTowerAtTile(col, row)) {
+    // Only paint terrain — tower occupancy is tracked separately.
+    // A BLOCKED tile that would seal off a spawn's path is skipped (not
+    // painted), but the rest of the drag stroke continues normally.
+    const blocked = tileState === TILE.BLOCKED;
+    if (!getTowerAtTile(col, row) && !(blocked && wouldBlockingTileSealPath(col, row))) {
       setTile(col, row, tileState);
     }
     if (col === col1 && row === row1) break;

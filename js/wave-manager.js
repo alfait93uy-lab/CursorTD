@@ -10,6 +10,7 @@ import { getActiveSpawnPoints, spawnEnemyFromSpawn } from "./spawning.js";
 import { isPlacementPhase, setGamePhase, updateWaveUI, updatePhaseUI } from "./game-phase.js";
 import { healFortForWave, isFortDestroyed } from "./fort.js";
 import { recordWaveComplete } from "./progress.js";
+import { allSpawnsCanReachFort } from "./pathfinding.js";
 
 /** @returns {object|null} Next wave config, or null if all waves are done. */
 export function getNextWaveConfig() {
@@ -17,18 +18,24 @@ export function getNextWaveConfig() {
   return CONFIG.WAVES[nextWaveIndex] ?? null;
 }
 
-/** Build a timed spawn queue from a wave definition. */
+/** Build a timed spawn queue from a wave definition without delays between different groups. */
 export function buildWaveSpawnQueue(waveConfig) {
   const spawns = getActiveSpawnPoints();
   const queue = [];
   let spawnSlot = 0;
 
-  for (const group of waveConfig.groups) {
+  for (let g = 0; g < waveConfig.groups.length; g++) {
+    const group = waveConfig.groups[g];
+    const isLastGroup = g === waveConfig.groups.length - 1;
+
     for (let i = 0; i < group.count; i++) {
+      const isLastEnemyInGroup = i === group.count - 1;
+
       queue.push({
         typeId: group.type,
         spawnSlot: spawnSlot % spawns.length,
-        delay: group.spawnInterval,
+        // If it's the last enemy in a group, set delay to 0 so the next group starts instantly
+        delay: (isLastEnemyInGroup && !isLastGroup) ? 0 : group.spawnInterval,
       });
       spawnSlot++;
     }
@@ -51,7 +58,8 @@ export function canStartWave() {
     isPlacementPhase() &&
     !state.wave.active &&
     !isFortDestroyed() &&
-    getNextWaveConfig() !== null
+    getNextWaveConfig() !== null &&
+    allSpawnsCanReachFort()
   );
 }
 
