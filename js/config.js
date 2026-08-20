@@ -76,7 +76,17 @@ export const CONFIG = {
   },
 
   /**
- * Wave definitions — each wave has a Monster Value budget and spawn groups.
+ * Wave definitions — each wave has a Monster Value budget, a spawn `period`
+ * (total seconds the wave's enemies spawn across), and how many spawn
+ * points to cycle through (`activeSpawnPoints`).
+ *
+ * Groups: { type, count, packSize? } — enemies spread evenly across the
+ * wave's period. `packSize` spawns that many enemies together per "pack"
+ * (e.g. count 9, packSize 3 → 3 packs of 3, spaced evenly across period).
+ * All groups in a wave interleave (mix together) rather than playing one
+ * group after another. Escape hatch: a group can set `interval` instead,
+ * for a fixed spawn gap that ignores the wave's period.
+ *
  * Monster Value = sum of (enemy.monsterValue × count) per group.
  * Values: basic (10), scout (8), tough (25), elite (60)
  */
@@ -84,89 +94,109 @@ export const CONFIG = {
   {
     number: 1,
     monsterValue: 30, // 3 * 10
+    period: 3,
+    activeSpawnPoints: 1,
     groups: [
-      { type: "basic", count: 3, spawnInterval: 1.2 },
+      { type: "basic", count: 3 },
     ],
   },
   {
     number: 2,
     monsterValue: 64, // (4 * 10) + (3 * 8)
+    period: 4,
+    activeSpawnPoints: 1,
     groups: [
-      { type: "basic", count: 4, spawnInterval: 1.0 },
-      { type: "scout", count: 3, spawnInterval: 0.8 },
+      { type: "basic", count: 4 },
+      { type: "scout", count: 3, packSize: 3 },
     ],
   },
   {
     number: 3,
     monsterValue: 110, // (7 * 10) + (5 * 8)
+    period: 5,
+    activeSpawnPoints: 2,
     groups: [
-      { type: "basic", count: 7, spawnInterval: 0.9 },
-      { type: "scout", count: 5, spawnInterval: 0.7 },
+      { type: "basic", count: 7 },
+      { type: "scout", count: 5, packSize: 3 },
     ],
   },
   {
     number: 4,
     monsterValue: 160, // (8 * 10) + (10 * 8)
+    period: 6,
+    activeSpawnPoints: 2,
     groups: [
-      { type: "basic", count: 8, spawnInterval: 0.8 },
-      { type: "scout", count: 10, spawnInterval: 0.6 },
+      { type: "basic", count: 8 },
+      { type: "scout", count: 10, packSize: 3 },
     ],
   },
   {
     number: 5,
     monsterValue: 220, // (7 * 10) + (5 * 8) + (4 * 25)
+    period: 7,
+    activeSpawnPoints: 3,
     groups: [
-      { type: "basic", count: 7, spawnInterval: 0.8 },
-      { type: "scout", count: 5, spawnInterval: 0.6 },
-      { type: "tough", count: 4, spawnInterval: 1.2 },
+      { type: "basic", count: 7 },
+      { type: "scout", count: 5, packSize: 3 },
+      { type: "tough", count: 4 },
     ],
   },
   {
     number: 6,
     monsterValue: 290, // (9 * 10) + (10 * 8) + (4 * 25)
+    period: 8,
+    activeSpawnPoints: 3,
     groups: [
-      { type: "basic", count: 9, spawnInterval: 0.7 },
-      { type: "scout", count: 10, spawnInterval: 0.5 },
-      { type: "tough", count: 4, spawnInterval: 1.1 },
+      { type: "basic", count: 9 },
+      { type: "scout", count: 10, packSize: 3 },
+      { type: "tough", count: 4 },
     ],
   },
   {
     number: 7,
     monsterValue: 370, // (12 * 10) + (10 * 8) + (7 * 25)
+    period: 9,
+    activeSpawnPoints: 3,
     groups: [
-      { type: "basic", count: 12, spawnInterval: 0.7 },
-      { type: "scout", count: 10, spawnInterval: 0.5 },
-      { type: "tough", count: 7, spawnInterval: 1.0 },
+      { type: "basic", count: 12 },
+      { type: "scout", count: 10, packSize: 3 },
+      { type: "tough", count: 7 },
     ],
   },
   {
     number: 8,
     monsterValue: 460, // (10 * 10) + (10 * 8) + (4 * 25) + (3 * 60)
+    period: 10,
+    activeSpawnPoints: 3,
     groups: [
-      { type: "basic", count: 10, spawnInterval: 0.6 },
-      { type: "scout", count: 10, spawnInterval: 0.4 },
-      { type: "tough", count: 4, spawnInterval: 1.0 },
-      { type: "elite", count: 3, spawnInterval: 2.5 },
+      { type: "basic", count: 10 },
+      { type: "scout", count: 10, packSize: 3 },
+      { type: "tough", count: 4 },
+      { type: "elite", count: 3 },
     ],
   },
   {
     number: 9,
     monsterValue: 560, // (12 * 10) + (15 * 8) + (6 * 25) + (3 * 60)
+    period: 11,
+    activeSpawnPoints: 3,
     groups: [
-      { type: "basic", count: 12, spawnInterval: 0.5 },
-      { type: "scout", count: 15, spawnInterval: 0.4 },
-      { type: "tough", count: 6, spawnInterval: 0.9 },
-      { type: "elite", count: 3, spawnInterval: 2.2 },
+      { type: "basic", count: 12 },
+      { type: "scout", count: 15, packSize: 3 },
+      { type: "tough", count: 6 },
+      { type: "elite", count: 3 },
     ],
   },
   {
     number: 10,
     monsterValue: 680, // (15 * 10) + (20 * 8) + (8 * 25) + (3 * 60)
+    period: 12,
+    activeSpawnPoints: 3,
     groups: [
-      { type: "basic", count: 15, spawnInterval: 0.5 },
-      { type: "scout", count: 20, spawnInterval: 0.3 },
-      { type: "tough", count: 8, spawnInterval: 0.8 },
-      { type: "elite", count: 3, spawnInterval: 2.0 },
+      { type: "basic", count: 15 },
+      { type: "scout", count: 20, packSize: 3 },
+      { type: "tough", count: 8 },
+      { type: "elite", count: 3 },
       ],
     },
   ],

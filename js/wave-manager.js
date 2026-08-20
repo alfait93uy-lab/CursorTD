@@ -1,12 +1,15 @@
 /**
  * WAVE-MANAGER.JS
- * Turns a CONFIG.WAVES entry into a timed spawn queue, tracks wave progress,
- * and hands control back to Placement phase once all wave enemies are gone.
+ * Owns wave LIFECYCLE only: starting a wave, ticking its spawn queue each
+ * frame, and detecting when it's complete. The actual "who spawns when"
+ * logic lives in wave-spawn-builder.js — this file just consumes the queue
+ * that builds.
  */
 
 import { CONFIG, GamePhase } from "./config.js";
 import { state } from "./state.js";
-import { getActiveSpawnPoints, spawnEnemyFromSpawn } from "./spawning.js";
+import { spawnEnemyFromSpawn } from "./spawning.js";
+import { buildWaveSpawnQueue } from "./wave-spawn-builder.js";
 import { isPlacementPhase, setGamePhase, updateWaveUI, updatePhaseUI } from "./game-phase.js";
 import { healFortForWave, isFortDestroyed } from "./fort.js";
 import { recordWaveComplete } from "./progress.js";
@@ -16,32 +19,6 @@ import { allSpawnsCanReachFort } from "./pathfinding.js";
 export function getNextWaveConfig() {
   const { nextWaveIndex } = state.wave;
   return CONFIG.WAVES[nextWaveIndex] ?? null;
-}
-
-/** Build a timed spawn queue from a wave definition without delays between different groups. */
-export function buildWaveSpawnQueue(waveConfig) {
-  const spawns = getActiveSpawnPoints();
-  const queue = [];
-  let spawnSlot = 0;
-
-  for (let g = 0; g < waveConfig.groups.length; g++) {
-    const group = waveConfig.groups[g];
-    const isLastGroup = g === waveConfig.groups.length - 1;
-
-    for (let i = 0; i < group.count; i++) {
-      const isLastEnemyInGroup = i === group.count - 1;
-
-      queue.push({
-        typeId: group.type,
-        spawnSlot: spawnSlot % spawns.length,
-        // If it's the last enemy in a group, set delay to 0 so the next group starts instantly
-        delay: (isLastEnemyInGroup && !isLastGroup) ? 0 : group.spawnInterval,
-      });
-      spawnSlot++;
-    }
-  }
-
-  return queue;
 }
 
 /** Calculate total Monster Value for a wave (for display / validation). */
@@ -78,7 +55,7 @@ export function startNextWave() {
   wave.spawnCooldown = 0;
   wave.spawningComplete = wave.spawnQueue.length === 0;
 
-  // Spawn the first enemy immediately, then use intervals for the rest
+  // Spawn the first enemy immediately, then use queued delays for the rest
   if (wave.spawnQueue.length > 0) {
     const first = wave.spawnQueue.shift();
     spawnEnemyFromSpawn(first.spawnSlot, first.typeId, true);
@@ -90,7 +67,7 @@ export function startNextWave() {
   updatePhaseUI();
 
   console.log(
-    `Wave ${waveConfig.number} started — Monster Value: ${waveConfig.monsterValue} (actual: ${calculateWaveMonsterValue(waveConfig)})`
+    `Wave ${waveConfig.number} started — Monster Value: ${waveConfig.monsterValue} (actual: ${calculateWaveMonsterValue(waveConfig)}), period: ${waveConfig.period}s, spawn points: ${waveConfig.activeSpawnPoints}`
   );
 
   return true;
