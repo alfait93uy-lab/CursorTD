@@ -59,8 +59,8 @@ export const CONFIG = {
       id: "tough",
       monsterValue: 25,
       hp: 200,
-      speed: 120,
-      xpReward: 6,
+      speed: 110,
+      xpReward: 12,
       fortDamage: 10,
       color: "#8e44ad",
     },
@@ -68,8 +68,8 @@ export const CONFIG = {
       id: "elite",
       monsterValue: 60,
       hp: 450,
-      speed: 110,
-      xpReward: 10,
+      speed: 85,
+      xpReward: 30,
       fortDamage: 25,
       color: "#2ecc71",
     },
@@ -238,7 +238,7 @@ export const CONFIG = {
       maxCount: 1, // base cap; skill tree can raise this later
       radius: 28,
       range: 200,
-      damage: 49,
+      damage: 50,
       attackSpeed: 0.5,
       attackType: "cone",
       coneAngle: (Math.PI * 2) / 3, // 120° wide cone
@@ -251,10 +251,9 @@ export const CONFIG = {
       maxCount: 2, // base cap; skill tree can raise this later
       radius: 28,
       range: 356,
-      projectileSpeed: 500,
       damage: 16,
-      attackSpeed: 2.0,
-      attackType: "directional_projectile",
+      attackSpeed: 1.2,
+      attackType: "directional",
       coneAngle: Math.PI / 10, // 30° narrow cone (thrust line)
       color: "#2ecc71",
     },
@@ -347,7 +346,8 @@ CONFIG.TALENT_TREES = {
             label: "Slayer",
             maxPoints: 3,
             costs: [10, 20, 100],
-            desc: "Commit to the Slayer's talent path.",
+            unlocksTower: true, // spending the first point IS the tower unlock — no separate purchase
+            desc: "Commit to the Slayer's talent path. First point unlocks the tower.",
           },
         ],
       },

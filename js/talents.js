@@ -17,7 +17,7 @@
 
 import { CONFIG } from "./config.js";
 import { state } from "./state.js";
-import { updateXpUI } from "./skill-tree.js";
+import { updateXpUI, grantTowerUnlock } from "./skill-tree.js";
 
 /** @returns {object|null} The talent tree definition for a tower, or null if not designed yet. */
 export function getTree(towerId) {
@@ -129,6 +129,11 @@ export function spendPoint(towerId, tree, tierIndex, nodeId) {
   state.player.xp -= cost;
   const talentState = ensureTalentState(towerId);
   talentState[nodeId] = points + 1;
+
+  if (node.unlocksTower && points === 0) {
+    grantTowerUnlock(towerId);
+  }
+
   return true;
 }
 

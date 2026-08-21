@@ -9,7 +9,7 @@ import { CONFIG } from "./config.js";
 import { state } from "./state.js";
 import { renderTowerBar } from "./placement.js";
 import { cancelTowerInteraction } from "./input.js";
-import { renderTalentTree } from "./talents.js";
+import { renderTalentTree, getTree } from "./talents.js";
 
 /** @returns {number} XP reward for killing an enemy type. */
 export function getEnemyXpReward(typeId) {
@@ -26,6 +26,17 @@ export function awardXp(amount) {
 /** @returns {boolean} True if the player has unlocked this tower type. */
 export function isTowerUnlocked(typeId) {
   return state.player.unlockedTowers.has(typeId);
+}
+
+/**
+ * Grant a tower unlock directly (no XP cost — the caller already paid, e.g.
+ * a talent tree's root node). Idempotent. Used by talents.js when a node
+ * flagged `unlocksTower` receives its first point.
+ */
+export function grantTowerUnlock(towerId) {
+  if (isTowerUnlocked(towerId)) return;
+  state.player.unlockedTowers.add(towerId);
+  renderTowerBar();
 }
 
 /** Update XP display in the HUD and skill tree panel. */
@@ -92,45 +103,55 @@ function renderSkillTreeTabContent() {
   const node = CONFIG.SKILL_TREE.find((n) => n.towerType === towerId);
   const towerDef = CONFIG.TOWER_TYPES[towerId];
   const unlocked = isTowerUnlocked(towerId);
+  const tree = getTree(towerId);
 
   // --- Unlock section ---
-  const unlockSection = document.createElement("div");
-  unlockSection.className = "skill-unlock-section";
+  // Towers with a talent tree unlock via that tree's Root node (its first
+  // point IS the unlock) — no separate purchase here. Towers without a tree
+  // yet still use the old standalone unlock button.
+  if (!tree) {
+    const unlockSection = document.createElement("div");
+    unlockSection.className = "skill-unlock-section";
 
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "skill-node";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "skill-node";
 
-  if (unlocked) {
-    btn.classList.add("unlocked");
-    btn.disabled = true;
-    btn.innerHTML = `
-      <span class="skill-node-icon tower-icon-${towerId}"></span>
-      <span class="skill-node-name">${node.label}</span>
-      <span class="skill-node-status">Unlocked</span>
-    `;
-  } else {
-    btn.disabled = state.player.xp < node.cost;
-    btn.innerHTML = `
-      <span class="skill-node-icon tower-icon-${towerId}"></span>
-      <span class="skill-node-name">${node.label}</span>
-      <span class="skill-node-cost">${node.cost} XP</span>
-    `;
-    btn.addEventListener("click", () => tryUnlockSkill(node.id));
+    if (unlocked) {
+      btn.classList.add("unlocked");
+      btn.disabled = true;
+      btn.innerHTML = `
+        <span class="skill-node-icon tower-icon-${towerId}"></span>
+        <span class="skill-node-name">${node.label}</span>
+        <span class="skill-node-status">Unlocked</span>
+      `;
+    } else {
+      btn.disabled = state.player.xp < node.cost;
+      btn.innerHTML = `
+        <span class="skill-node-icon tower-icon-${towerId}"></span>
+        <span class="skill-node-name">${node.label}</span>
+        <span class="skill-node-cost">${node.cost} XP</span>
+      `;
+      btn.addEventListener("click", () => tryUnlockSkill(node.id));
+    }
+
+    if (towerDef) {
+      btn.title = `${node.label} — ${towerDef.damage} dmg, ${towerDef.range}px range`;
+    }
+
+    unlockSection.appendChild(btn);
+    container.appendChild(unlockSection);
   }
 
-  if (towerDef) {
-    btn.title = `${node.label} — ${towerDef.damage} dmg, ${towerDef.range}px range`;
-  }
-
-  unlockSection.appendChild(btn);
-  container.appendChild(unlockSection);
-
-  // --- Talent tree section (only once the tower itself is unlocked) ---
+  // --- Talent tree section ---
+  // With a tree: always shown (Root tier handles its own unlock/gating).
+  // Without one: only a placeholder, gated behind the old unlock button.
   const treeSection = document.createElement("div");
   treeSection.className = "talent-tree-section";
 
-  if (!unlocked) {
+  if (tree) {
+    renderTalentTree(treeSection, towerId);
+  } else if (!unlocked) {
     const msg = document.createElement("p");
     msg.className = "talent-placeholder";
     msg.textContent = "Unlock this tower to access its talent tree.";
