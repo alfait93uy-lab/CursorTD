@@ -46,9 +46,12 @@ export function updatePhaseUI() {
 
 export function updateWaveUI() {
   const btn = document.getElementById("wave-btn");
+  const replayBtn = document.getElementById("replay-wave-btn");
   const indicator = document.getElementById("wave-indicator");
   const wave = state.wave;
   const nextWave = getNextWaveConfig();
+
+  if (replayBtn) replayBtn.disabled = !wave.canReplay;
 
   if (wave.active) {
     btn.textContent = `Wave ${wave.currentWaveNumber}…`;

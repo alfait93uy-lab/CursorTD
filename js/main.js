@@ -14,7 +14,7 @@ import { renderTowerBar, selectTowerType } from "./placement.js";
 import { toggleSkillTree, closeSkillTree, updateXpUI } from "./skill-tree.js";
 import { updatePhaseUI, updateWaveUI, isCombatPhase } from "./game-phase.js";
 import { updateCamera, clampCamera } from "./camera.js";
-import { updateWaveManager } from "./wave-manager.js";
+import { updateWaveManager, replayWave } from "./wave-manager.js";
 import { render } from "./render.js";
 import { updateFortUI, isFortDestroyed } from "./fort.js";
 import { initMenu } from "./menu.js";
@@ -34,6 +34,8 @@ function init() {
   document.getElementById("game-over-reload").addEventListener("click", () => {
     window.location.reload();
   });
+  document.getElementById("game-over-replay").addEventListener("click", replayWave);
+  document.getElementById("replay-wave-btn").addEventListener("click", replayWave);
   initMenu(startGameLoop);
 }
 

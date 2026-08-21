@@ -40,10 +40,19 @@ export function updateFortUI() {
   }
 }
 
-function showGameOver() {
+export function showGameOver() {
   const panel = document.getElementById("game-over-panel");
   if (panel) {
     panel.classList.remove("hidden");
     panel.setAttribute("aria-hidden", "false");
+  }
+}
+
+/** Hide the Game Over overlay (used by Re-play Wave). */
+export function hideGameOver() {
+  const panel = document.getElementById("game-over-panel");
+  if (panel) {
+    panel.classList.add("hidden");
+    panel.setAttribute("aria-hidden", "true");
   }
 }

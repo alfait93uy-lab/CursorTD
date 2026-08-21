@@ -56,6 +56,7 @@
 
     <button id="spawn-btn" type="button" title="Spawn a test enemy">Spawn Enemy (Space)</button>
     <button id="wave-btn" type="button" title="Send the next wave (F1)">Send Wave (F1)</button>
+    <button id="replay-wave-btn" type="button" title="Reset the current wave back to Placement" disabled>Re-play Wave</button>
     <button id="skill-tree-btn" type="button" title="Open Skill Tree (K)">Skill Tree (K)</button>
     <div id="xp-display">XP: 30</div>
     <div id="fort-hp-display">Fort: 30/30</div>
@@ -69,7 +70,8 @@
     <div id="game-over-panel" class="hidden" aria-hidden="true">
       <div class="game-over-content">
         <h2 class="game-over-title">Fort Destroyed</h2>
-        <p class="game-over-hint">The Fort has fallen. Reload to try again.</p>
+        <p class="game-over-hint">The Fort has fallen.</p>
+        <button id="game-over-replay" type="button" class="game-over-replay">Re-play Wave</button>
         <button id="game-over-reload" type="button" class="game-over-reload">Reload</button>
       </div>
     </div>

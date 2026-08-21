@@ -11,9 +11,10 @@ import { state } from "./state.js";
 import { spawnEnemyFromSpawn } from "./spawning.js";
 import { buildWaveSpawnQueue } from "./wave-spawn-builder.js";
 import { isPlacementPhase, setGamePhase, updateWaveUI, updatePhaseUI } from "./game-phase.js";
-import { healFortForWave, isFortDestroyed } from "./fort.js";
+import { healFortForWave, isFortDestroyed, updateFortUI, hideGameOver } from "./fort.js";
 import { recordWaveComplete } from "./progress.js";
 import { allSpawnsCanReachFort } from "./pathfinding.js";
+import { updateXpUI } from "./skill-tree.js";
 
 /** @returns {object|null} Next wave config, or null if all waves are done. */
 export function getNextWaveConfig() {
@@ -55,6 +56,12 @@ export function startNextWave() {
   wave.spawnCooldown = 0;
   wave.spawningComplete = wave.spawnQueue.length === 0;
 
+  // Snapshot for Re-play Wave: undoes everything from this point forward
+  // (kill XP, any mid-wave talent spend, Fort damage taken) if things go badly.
+  wave.canReplay = true;
+  wave.fortHpSnapshot = state.fort.hp;
+  wave.xpSnapshot = state.player.xp;
+
   // Spawn the first enemy immediately, then use queued delays for the rest
   if (wave.spawnQueue.length > 0) {
     const first = wave.spawnQueue.shift();
@@ -94,11 +101,44 @@ export function completeWave() {
   wave.currentWaveNumber = 0;
   wave.spawnQueue = [];
   wave.spawningComplete = false;
+  wave.canReplay = false; // wave cleared — nothing left to replay until the next one starts
   wave.nextWaveIndex++;
 
   setGamePhase(GamePhase.PLACEMENT);
   updateWaveUI();
   updatePhaseUI();
+}
+
+/**
+ * Re-play the current wave attempt: clears the battlefield, returns to
+ * Placement, and undoes everything since this wave started — Fort damage
+ * taken, XP earned from kills, and any talent points spent mid-wave.
+ * Tower placements are untouched. No-op if no wave is currently replayable.
+ */
+export function replayWave() {
+  const wave = state.wave;
+  if (!wave.canReplay) return false;
+
+  state.enemies = [];
+  state.projectiles = [];
+
+  wave.active = false;
+  wave.currentWaveNumber = 0;
+  wave.spawnQueue = [];
+  wave.spawnCooldown = 0;
+  wave.spawningComplete = false;
+
+  state.player.xp = wave.xpSnapshot;
+  state.fort.hp = wave.fortHpSnapshot;
+  state.fort.destroyed = false;
+
+  hideGameOver();
+  setGamePhase(GamePhase.PLACEMENT);
+  updateXpUI();
+  updateFortUI();
+  updateWaveUI();
+
+  return true;
 }
 
 /** Process wave spawning and check for wave completion. */

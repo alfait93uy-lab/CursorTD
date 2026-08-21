@@ -55,6 +55,12 @@ export const state = {
     spawnCooldown: 0,
     /** All enemies from the queue have been spawned */
     spawningComplete: false,
+    /** True once a wave has been started at least once since it last fully cleared — gates the Re-play button */
+    canReplay: false,
+    /** Fort HP right after this wave's start-of-wave heal — Re-play restores to this */
+    fortHpSnapshot: 0,
+    /** Player XP right when this wave started — Re-play restores to this (undoes kill XP + any talent spend mid-wave) */
+    xpSnapshot: 0,
   },
 
   /** Fort health */
