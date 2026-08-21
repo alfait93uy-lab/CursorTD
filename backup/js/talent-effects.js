@@ -15,15 +15,6 @@
  *   critDamage                { perLevel[] }          % added to CONFIG.BASE_CRIT_DAMAGE_MULTIPLIER
  *   bleed                    { levels[] }            level `points` (1-indexed) is the active {percent,duration}
  *   bleedDurationReduction   { perPoint }            shortens the active bleed's duration
- *   projectileSpeed          { perPoint }            projectileSpeed += perPoint * points
- *   damageVsTier             { tiers[], perPoint }   +perPoint*points damage multiplier vs enemies whose
- *                                                     CONFIG.ENEMY_TYPES[...].tier is in `tiers` (Marksman: Elite Damage)
- *   execute                  { tiers[], perPoint }   perPoint*points chance to instantly kill an enemy whose
- *                                                     tier is in `tiers`, rolled per hit (Marksman: Execute)
- *   bonusArrowChance         { perPoint }            perPoint*points chance to also fire extra arrow(s) at a
- *                                                     random in-range enemy, CONFIG.BONUS_ARROW_DELAY later
- *   bonusArrowCount          { perPoint }            perPoint*points extra arrows added on top of the base 1
- *                                                     whenever bonusArrowChance triggers
  *
  * Nodes with no `effect` field (reserved/stub nodes) are simply skipped.
  */
@@ -56,12 +47,6 @@ export function getEffectiveTowerStats(towerId) {
     bleed: null,
     pierce: def.pierce ?? 1, // projectile-only stat; melee attack types ignore it
     maxCount: def.maxCount, // placement cap; talent-driven trees usually raise this from a 0 base
-    projectileSpeed: def.projectileSpeed, // homing/line projectile speed, talent-adjustable (Marksman: Projectile Speed)
-    damageVsTier: null, // { tiers:[], multiplier } | null — set by Marksman's Elite Damage
-    executeChance: 0, // Marksman: Execute
-    executeTiers: [],
-    bonusArrowChance: 0, // Marksman: Bonus Arrow
-    bonusArrowCount: 0, // Marksman: Additional Arrow Count
   };
 
   const tree = getTree(towerId);
@@ -72,8 +57,6 @@ export function getEffectiveTowerStats(towerId) {
   let bleedLevelEntry = null;
   let critChancePoints = 0;
   let critDamagePoints = 0;
-  let damageVsTierMultiplier = 0;
-  let damageVsTierTiers = null;
 
   for (const tier of tree.tiers) {
     for (const node of tier.nodes) {
@@ -111,29 +94,8 @@ export function getEffectiveTowerStats(towerId) {
         case "towerCap":
           stats.maxCount += eff.perPoint * points;
           break;
-        case "projectileSpeed":
-          stats.projectileSpeed += eff.perPoint * points;
-          break;
-        case "damageVsTier":
-          damageVsTierMultiplier += eff.perPoint * points;
-          damageVsTierTiers = eff.tiers;
-          break;
-        case "execute":
-          stats.executeChance = Math.min(1, stats.executeChance + eff.perPoint * points);
-          stats.executeTiers = eff.tiers;
-          break;
-        case "bonusArrowChance":
-          stats.bonusArrowChance = Math.min(1, stats.bonusArrowChance + eff.perPoint * points);
-          break;
-        case "bonusArrowCount":
-          stats.bonusArrowCount += eff.perPoint * points;
-          break;
       }
     }
-  }
-
-  if (damageVsTierTiers) {
-    stats.damageVsTier = { tiers: damageVsTierTiers, multiplier: 1 + damageVsTierMultiplier };
   }
 
   stats.critChance = Math.min(1, critChancePoints / 100);

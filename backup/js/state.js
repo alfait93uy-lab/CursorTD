@@ -21,8 +21,6 @@ export const state = {
   tilemap: createTilemap(CONFIG.MAP_COLS, CONFIG.MAP_ROWS),
   enemies: [],
   projectiles: [],
-  /** Marksman "Bonus Arrow" talent: delayed extra shots waiting to fire — { timer, tower } */
-  pendingShots: [],
   nextSpawnIndex: 0,
   bgImage: null,
   lastFrameTime: 0,
@@ -59,10 +57,14 @@ export const state = {
     spawningComplete: false,
     /** True once a wave has been started at least once since it last fully cleared — gates the Re-play button */
     canReplay: false,
+    /** Index into CONFIG.WAVES this snapshot/replay corresponds to — Re-play restores nextWaveIndex to this, undoing completeWave()'s advance if the wave was already won */
+    replayWaveIndex: 0,
     /** Fort HP right after this wave's start-of-wave heal — Re-play restores to this */
     fortHpSnapshot: 0,
     /** Player XP right when this wave started — Re-play restores to this (undoes kill XP + any talent spend mid-wave) */
     xpSnapshot: 0,
+    /** XP earned from kills so far this wave attempt (gross, unaffected by mid-wave spending) — shown on the post-wave popup */
+    xpEarnedThisWave: 0,
   },
 
   /** Fort health */

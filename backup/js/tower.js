@@ -16,47 +16,6 @@ import { drawRangeCircle, drawConeIndicator, drawRotationHandle } from "./render
 import { getEffectiveTowerStats } from "./talent-effects.js";
 import { applyBleed } from "./status-effects.js";
 
-/**
- * Ticks state.pendingShots (Marksman's delayed Bonus Arrow talent) and
- * fires any whose delay has elapsed. Call once per frame during combat,
- * alongside updateTowers/updateProjectiles.
- * @param {number} dt
- */
-export function updatePendingShots(dt) {
-  if (state.pendingShots.length === 0) return;
-
-  const remaining = [];
-  for (const shot of state.pendingShots) {
-    shot.timer -= dt;
-    if (shot.timer > 0) {
-      remaining.push(shot);
-      continue;
-    }
-    fireBonusArrow(shot.tower);
-  }
-  state.pendingShots = remaining;
-}
-
-/** Fires one delayed bonus arrow at a freshly-picked random in-range target. Wasted (no shot) if nothing's in range anymore. */
-function fireBonusArrow(tower) {
-  const stats = tower.getStats();
-  const target = tower.findRandomInRange(stats);
-  if (!target || !target.isAlive()) return;
-
-  const dmg = tower.rollDamage(stats, target);
-  state.projectiles.push(
-    new Projectile({
-      x: tower.x,
-      y: tower.y,
-      target,
-      damage: dmg,
-      speed: stats.projectileSpeed,
-      color: tower.def.projectileColor,
-      pierce: stats.pierce,
-    })
-  );
-}
-
 export class Tower {
   constructor(typeId, x, y) {
     this.typeId = typeId;
@@ -198,35 +157,17 @@ export class Tower {
 
   /**
    * Roll a crit and return the damage to actually deal for one hit.
-   * If a target is given, also applies target-tier-dependent effects
-   * (Marksman: Elite Damage's vs-tier multiplier, Execute's instakill
-   * chance) — harmless no-op for towers/nodes that don't set those stats.
    * @param {object} stats
-   * @param {Enemy} [target]
    */
-  rollDamage(stats, target = null) {
+  rollDamage(stats) {
     const isCrit = Math.random() < stats.critChance;
-    let dmg = isCrit ? stats.damage * stats.critDamageMultiplier : stats.damage;
-
-    if (target) {
-      const tier = CONFIG.ENEMY_TYPES[target.typeId]?.tier;
-
-      if (stats.damageVsTier && stats.damageVsTier.tiers.includes(tier)) {
-        dmg *= stats.damageVsTier.multiplier;
-      }
-
-      if (stats.executeChance > 0 && stats.executeTiers.includes(tier) && Math.random() < stats.executeChance) {
-        dmg = target.hp; // guarantees a kill regardless of remaining HP
-      }
-    }
-
-    return dmg;
+    return isCrit ? stats.damage * stats.critDamageMultiplier : stats.damage;
   }
 
   /** Instant melee hit on all given targets (cone/directional/aoe attacks). */
   meleeAttack(targets, stats = this.getStats()) {
     for (const enemy of targets) {
-      const dmg = this.rollDamage(stats, enemy);
+      const dmg = this.rollDamage(stats);
       enemy.takeDamage(dmg);
       if (stats.bleed) {
         applyBleed(enemy, dmg * (stats.bleed.percent / 100), stats.bleed.duration);
@@ -238,42 +179,19 @@ export class Tower {
 
   /** @param {Enemy} target Fires a homing projectile (ranged towers only). */
   fireAt(target, stats = this.getStats()) {
-    const dmg = this.rollDamage(stats, target);
+    const dmg = this.rollDamage(stats);
     state.projectiles.push(
       new Projectile({
         x: this.x,
         y: this.y,
         target,
         damage: dmg,
-        speed: stats.projectileSpeed,
+        speed: this.def.projectileSpeed,
         color: this.def.projectileColor,
         pierce: stats.pierce,
       })
     );
     this.attackCooldown = stats.attackInterval;
-    this.maybeFireBonusArrows(stats);
-  }
-
-  /**
-   * Marksman's Bonus Arrow talent: on a successful chance roll, queues
-   * (1 + bonusArrowCount) extra shots that each fire CONFIG.BONUS_ARROW_DELAY
-   * later at their own freshly-picked random in-range target (see
-   * updatePendingShots below) — independent from the main shot just fired.
-   */
-  maybeFireBonusArrows(stats) {
-    if (!stats.bonusArrowChance || Math.random() >= stats.bonusArrowChance) return;
-
-    const extraCount = 1 + (stats.bonusArrowCount || 0);
-    for (let i = 0; i < extraCount; i++) {
-      state.pendingShots.push({ timer: CONFIG.BONUS_ARROW_DELAY, tower: this });
-    }
-  }
-
-  /** A random living enemy within range, or null (used by delayed bonus arrows). */
-  findRandomInRange(stats = this.getStats()) {
-    const inRange = this.getEnemiesInRange(stats);
-    if (inRange.length === 0) return null;
-    return inRange[Math.floor(Math.random() * inRange.length)];
   }
 
   /**
@@ -292,7 +210,7 @@ export class Tower {
         y: this.y,
         angle: shotAngle,
         damage: dmg,
-        speed: stats.projectileSpeed,
+        speed: this.def.projectileSpeed,
         color: this.def.projectileColor,
         pierce: stats.pierce,
         maxRange: stats.range,

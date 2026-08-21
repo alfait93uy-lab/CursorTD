@@ -36,14 +36,9 @@ export const CONFIG = {
   },
 
   // --- Phase 3 & 6: enemies ---
-  // `tier` (1-4) is referenced by Marksman's talent tree: Execute targets
-  // tier 1-2 mobs, Elite Damage targets tier 3-4 mobs. Assigned by relative
-  // toughness (basic/scout are the weak early-wave mobs, tough/elite are
-  // the late-wave threats).
   ENEMY_TYPES: {
     basic: {
       id: "basic",
-      tier: 1,
       monsterValue: 10,
       hp: 100,
       speed: 140,
@@ -53,7 +48,6 @@ export const CONFIG = {
     },
     scout: {
       id: "scout",
-      tier: 2,
       monsterValue: 8,
       hp: 60,
       speed: 220,
@@ -63,7 +57,6 @@ export const CONFIG = {
     },
     tough: {
       id: "tough",
-      tier: 3,
       monsterValue: 25,
       hp: 200,
       speed: 110,
@@ -73,7 +66,6 @@ export const CONFIG = {
     },
     elite: {
       id: "elite",
-      tier: 4,
       monsterValue: 60,
       hp: 450,
       speed: 85,
@@ -320,10 +312,6 @@ CONFIG.TALENT_TIER_UNLOCK_THRESHOLD = 5;
 // (out of its 3) to open tier 1.
 CONFIG.TALENT_ROOT_UNLOCK_THRESHOLD = 1;
 
-// Marksman "Bonus Arrow" talent: delay (seconds) before an extra arrow
-// fires after the triggering shot.
-CONFIG.BONUS_ARROW_DELAY = 0.1;
-
 // Crit damage before any "Crit Damage" talent points are spent (150%).
 CONFIG.BASE_CRIT_DAMAGE_MULTIPLIER = 1.5;
 
@@ -537,163 +525,7 @@ CONFIG.TALENT_TREES = {
       },
     ],
   },
-  /**
-   * Marksman has no root/unlock node — it starts already placeable (base
-   * maxCount: 2, see TOWER_TYPES.marksman) and opens straight into 3
-   * parallel branches at tier 1. tier1's `unlock` gates tier2 (needs 5
-   * points spent in tier1), tier2 gates tier3 (5 more, 10 total), tier3
-   * gates tier4 (5 more, 15 total) — same uniform threshold as every other
-   * tree, chained tier-to-tier (see talents.js header comment).
-   *
-   * NUMBERS BELOW ARE ASSUMPTIONS — the spec gave node names/branching but
-   * no magnitudes. Flagged per-node; tune directly once play-tested.
-   */
-  marksman: {
-    tiers: [
-      {
-        id: "tier1",
-        unlock: { type: "sum", threshold: CONFIG.TALENT_TIER_UNLOCK_THRESHOLD },
-        nodes: [
-          {
-            id: "projspeed",
-            label: "Projectile Speed",
-            maxPoints: 3,
-            cost: 10,
-            // ASSUMPTION: +100 projectile speed per point (base 850, max 1150).
-            effect: { type: "projectileSpeed", perPoint: 100 },
-            desc: "+100 projectile speed per point.",
-          },
-          {
-            id: "damage1",
-            label: "Damage",
-            maxPoints: 5,
-            cost: 10,
-            effect: { type: "flatDamage", perPoint: 3 },
-            desc: "+3 damage per point.",
-          },
-          {
-            id: "aspeed1",
-            label: "A.Speed",
-            maxPoints: 3,
-            cost: 10,
-            // ASSUMPTION: -0.1s attack interval per point (base 1s, max 0.7s).
-            effect: { type: "attackInterval", perLevelReduction: [0.1, 0.1, 0.1] },
-            desc: "-0.1s attack interval per point.",
-          },
-        ],
-      },
-      {
-        id: "tier2",
-        unlock: { type: "sum", threshold: CONFIG.TALENT_TIER_UNLOCK_THRESHOLD },
-        nodes: [
-          {
-            id: "longbow",
-            label: "Longbow",
-            maxPoints: 3,
-            cost: 15,
-            requires: { nodeId: "projspeed", min: 1 },
-            // ASSUMPTION: +40 attack range per point (base 450, max 570).
-            effect: { type: "flatRange", perPoint: 40 },
-            desc: "+40 attack range per point.",
-          },
-          {
-            id: "aspeed2",
-            label: "A.Speed",
-            maxPoints: 5,
-            cost: 15,
-            requires: { nodeId: "damage1", min: 1 },
-            // ASSUMPTION: -0.05s attack interval per point (max additional -0.25s).
-            effect: { type: "attackInterval", perLevelReduction: [0.05, 0.05, 0.05, 0.05, 0.05] },
-            desc: "-0.05s attack interval per point.",
-          },
-          {
-            id: "recurvebow",
-            label: "Recurve Bow",
-            maxPoints: 3,
-            cost: 15,
-            requires: { nodeId: "aspeed1", min: 1 },
-            // ASSUMPTION: -0.05s attack interval per point (max additional -0.15s).
-            effect: { type: "attackInterval", perLevelReduction: [0.05, 0.05, 0.05] },
-            desc: "-0.05s attack interval per point.",
-          },
-        ],
-      },
-      {
-        id: "tier3",
-        unlock: { type: "sum", threshold: CONFIG.TALENT_TIER_UNLOCK_THRESHOLD },
-        nodes: [
-          {
-            id: "elitedamage",
-            label: "Elite Damage",
-            maxPoints: 3,
-            cost: 20,
-            requires: { nodeId: "longbow", min: 1 },
-            // ASSUMPTION: +10% damage per point vs tier 3-4 mobs (max +30%).
-            effect: { type: "damageVsTier", tiers: [3, 4], perPoint: 0.1 },
-            desc: "+10% damage per point against tough/elite mobs.",
-          },
-          {
-            id: "critchance",
-            label: "Crit %",
-            maxPoints: 5,
-            cost: 20,
-            requires: { nodeId: "aspeed2", min: 1 },
-            // ASSUMPTION: mirrors Slayer's crit curve shape, tuned down slightly.
-            effect: { type: "critChance", perLevel: [10, 8, 7, 5, 5] },
-            desc: "+10/+8/+7/+5/+5% crit chance per level.",
-          },
-          {
-            id: "bonusarrowchance",
-            label: "Bonus Arrow",
-            maxPoints: 3,
-            cost: 20,
-            requires: { nodeId: "recurvebow", min: 1 },
-            // ASSUMPTION: +10% chance per point (max 30%) to also fire an
-            // extra arrow CONFIG.BONUS_ARROW_DELAY later at a random mob in range.
-            effect: { type: "bonusArrowChance", perPoint: 0.1 },
-            desc: "+10% chance per point to fire an additional arrow (0.1s delay) at a random mob in range.",
-          },
-        ],
-      },
-      {
-        id: "tier4",
-        unlock: null, // last tier
-        nodes: [
-          {
-            id: "execute",
-            label: "Execute",
-            maxPoints: 2,
-            cost: 30,
-            requires: { nodeId: "elitedamage", min: 1 },
-            // ASSUMPTION: +15% chance per point to one-shot tier 1-2 mobs (max 30%).
-            effect: { type: "execute", tiers: [1, 2], perPoint: 0.15 },
-            desc: "+15% chance per point to instantly kill basic/scout mobs on hit.",
-          },
-          {
-            id: "critdamage",
-            label: "Crit Damage",
-            maxPoints: 2,
-            cost: 30,
-            requires: { nodeId: "critchance", min: 1 },
-            effect: { type: "critDamage", perLevel: [30, 20] },
-            desc: "+30% / +20% crit damage per level (on top of the 150% base).",
-          },
-          {
-            id: "bonusarrowcount",
-            label: "Additional Arrow Count",
-            maxPoints: 2,
-            cost: 30,
-            requires: { nodeId: "bonusarrowchance", min: 1 },
-            // ASSUMPTION: +1 extra arrow per point when the Bonus Arrow chance
-            // triggers (base 1 extra arrow, max 3 total on a proc).
-            effect: { type: "bonusArrowCount", perPoint: 1 },
-            desc: "+1 additional arrow per point whenever Bonus Arrow triggers.",
-          },
-        ],
-      },
-    ],
-  },
-  // spearman / striker talent trees not designed yet
+  // spearman / striker / marksman talent trees not designed yet
 };
 
 // --- Main Menu: map select ---

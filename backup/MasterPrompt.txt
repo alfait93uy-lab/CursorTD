@@ -1,0 +1,75 @@
+Final Master Prompt – Tower Defense HTML GameHere is the clean, complete, and up-to-date Master Prompt based on everything we clarified:Game OverviewCreate a complete Tower Defense game in pure HTML + CSS + JavaScript using HTML5 Canvas.
+The game features a skill-tree progression system based on XP, six towers, three maps, dynamic pathfinding on a grid/tilemap, and local saving.All visual assets (towers, projectiles, enemies, effects) must be clearly marked as PLACEHOLDER for easy replacement later.Core LoopMain Menu → Select Map / Difficulty / View Skill Tree
+Tower Placement Phase (can freely move towers)
+Send Wave (F1)
+Combat Phase
+Wave Result screen → Option to view the map (after-battle strategy view)
+Planning Table (Skill Tree)
+Next Wave / Next Challenge
+
+Maps & Path SystemThree maps. Player provides JPG backgrounds.
+Use a grid / tilemap system on top of the JPG so paths can be easily adjusted to match the roads on the image.
+Each map has 5 spawn points.
+Dynamic pathfinding: enemies path around towers.
+Restricted placement zones near path edges so the path can never be fully blocked (allows funneling but prevents abuse).
+Map 1: 10 waves  
+Map 2: Unlocked at Wave 10 of Map 1 (10 waves)  
+Map 3: Unlocked at Wave 10 of Map 2 (10 waves)  
+Endless mode unlocked after clearing each map.
+
+Towers (6 total)Slayer (Melee) – Cone attack in front of the tower  
+Spearman (Melee) – Directional attack, smaller area, longer range  
+Striker (Melee) – Area attack around itself  
+Marksman (Ranged) – Targets enemy closest to the Fort, straight projectile  
+Outpost (Ranged) – Projectile that deals area damage on impact  
+Balista (Ranged) – Straight piercing projectile, targets highest HP enemy
+
+Towers have hitboxes and can be placed on the path (within rules).Economy & Skill Tree (XP only)Player starts with 30 XP.
+XP is earned by killing enemies and is used exclusively on the Skill Tree.
+Starting nodes (10 XP each): Slayer, Spearman, Striker, Marksman.
+Outpost and Balista are unlocked deeper in the tree.
+Each of the four starting towers has two branches:Slayer: Bleeding on hit / AoE size
+Spearman: Damage / Attack Range
+Striker: Damage / AoE size
+Marksman: Damage / Projectile Speed
+
+Skill tree nodes can also increase the maximum number of a specific tower.
+Refund is only possible through a special refund node on the skill tree (select talents to refund).
+No selling towers during Placement Phase.
+
+Future-proofing note: Yes — implementing new on-hit effects later will be easy if we build a clean status/effect system from the start (e.g. Burning, Slow, Bleed, etc. as modular components).EnemiesStart with 4 different mobs for Map 1 (different HP, speed, Monster Value, Fort damage, etc.).
+Map 2 and Map 3 enemies are PLACEHOLDER for now.
+Waves use a Monster Value budget system (exact math later).
+Example structure: Map1 Wave 1 = 100 Monster Value, distributed across spawn points.
+
+FortStarts at 30 HP
+HP persists between waves
+Regenerates +5 HP at the beginning of every wave
+Invisible goal point at the end of the path
+
+DifficultiesNormal: Standard rules
+Hard: Fort has only 1 HP
+Very Hard: Fort has only 1 HP + random mob spawns
+
+ControlsTower hotkeys: 1 2 3 4 5 6
+Camera: WASD movement + Mouse Wheel Zoom
+Camera limited to map edges
+Send Wave: F1
+Quit: F2 (with confirmation)
+
+Progression & SaveLocalStorage save (unlocked skill tree nodes, highest wave reached per map, unlocked maps).
+Highest wave reached is the main long-term tracking metric (no complex score system needed).
+Congratulation message + reward when completing a map (reaching Wave 10).
+
+UI RequirementsTower bar at bottom center
+Fort HP bar
+Current Wave + Monster Value info
+XP display
+Clear phase indicators (Placement / Combat / Planning)
+Cone or range indicators when placing or selecting towers
+
+Technical NotesCanvas rendering
+Grid/tilemap path system aligned to JPG backgrounds
+Clean, modular code so new towers, on-hit effects, and enemies can be added easily
+All sprites and projectiles marked as PLACEHOLDER
+

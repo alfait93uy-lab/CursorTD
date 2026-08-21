@@ -14,9 +14,8 @@ import { renderTowerBar, selectTowerType } from "./placement.js";
 import { toggleSkillTree, closeSkillTree, updateXpUI } from "./skill-tree.js";
 import { updatePhaseUI, updateWaveUI, isCombatPhase } from "./game-phase.js";
 import { updateCamera, clampCamera } from "./camera.js";
-import { updateWaveManager, replayWave } from "./wave-manager.js";
+import { updateWaveManager, replayWave, hideWaveCompletePanel } from "./wave-manager.js";
 import { render } from "./render.js";
-import { updatePendingShots } from "./tower.js";
 import { updateFortUI, isFortDestroyed } from "./fort.js";
 import { initMenu } from "./menu.js";
 
@@ -37,6 +36,8 @@ function init() {
   });
   document.getElementById("game-over-replay").addEventListener("click", replayWave);
   document.getElementById("replay-wave-btn").addEventListener("click", replayWave);
+  document.getElementById("wave-complete-replay").addEventListener("click", replayWave);
+  document.getElementById("wave-complete-continue").addEventListener("click", hideWaveCompletePanel);
   initMenu(startGameLoop);
 }
 
@@ -105,7 +106,6 @@ function gameLoop(timestamp) {
     if (isCombatPhase()) {
       updateWaveManager(dt);
       updateTowers(dt);
-      updatePendingShots(dt);
       updateProjectiles(dt);
       cleanupCombatEntities();
     }
