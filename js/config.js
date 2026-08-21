@@ -156,7 +156,7 @@ export const CONFIG = {
     number: 7,
     monsterValue: 370, // (12 * 10) + (10 * 8) + (7 * 25)
     period: 9,
-    activeSpawnPoints: 3,
+    activeSpawnPoints: 4,
     groups: [
       { type: "basic", count: 12 },
       { type: "scout", count: 10, packSize: 3 },
@@ -167,7 +167,7 @@ export const CONFIG = {
     number: 8,
     monsterValue: 460, // (10 * 10) + (10 * 8) + (4 * 25) + (3 * 60)
     period: 10,
-    activeSpawnPoints: 3,
+    activeSpawnPoints: 4,
     groups: [
       { type: "basic", count: 10 },
       { type: "scout", count: 10, packSize: 3 },
@@ -179,7 +179,7 @@ export const CONFIG = {
     number: 9,
     monsterValue: 560, // (12 * 10) + (15 * 8) + (6 * 25) + (3 * 60)
     period: 11,
-    activeSpawnPoints: 3,
+    activeSpawnPoints: 5,
     groups: [
       { type: "basic", count: 12 },
       { type: "scout", count: 15, packSize: 3 },
@@ -191,7 +191,7 @@ export const CONFIG = {
     number: 10,
     monsterValue: 680, // (15 * 10) + (20 * 8) + (8 * 25) + (3 * 60)
     period: 12,
-    activeSpawnPoints: 3,
+    activeSpawnPoints: 5,
     groups: [
       { type: "basic", count: 15 },
       { type: "scout", count: 20, packSize: 3 },
@@ -203,11 +203,11 @@ export const CONFIG = {
 
   MAX_SPAWN_POINTS: 5,
   SPAWN_POINTS: [
-    { col: 2, row: 10 },
-    { col: 2, row: 12 },
-    { col: 2, row: 11 },
-    null,
-    null,
+    { col: 46, row: 35 },
+    { col: 28, row: 10 },
+    { col: 25, row: 15 },
+    { col: 28, row: 25 },
+    { col: 46, row: 2 },
   ],
   FORT: { col: 46, row: 19 },
   // --- Fort HP system ---
@@ -245,6 +245,9 @@ export const CONFIG = {
       color: "#e74c3c",
     },
     // Melee, directional attack — narrow cone but longer range than Slayer.
+    // Ranged — fires a straight arrow in a randomized direction within its
+    // facing cone (not homed to one exact enemy), pierces every enemy it
+    // passes through until it leaves range.
     spearman: {
       id: "spearman",
       label: "Spearman",
@@ -252,9 +255,12 @@ export const CONFIG = {
       radius: 28,
       range: 356,
       damage: 16,
-      attackSpeed: 1.2,
-      attackType: "directional",
-      coneAngle: Math.PI / 10, // 30° narrow cone (thrust line)
+      attackSpeed: 5.2,
+      attackType: "directionalProjectile",
+      coneAngle: Math.PI / 6, // 30° spread — each shot's direction is randomized within this
+      pierce: Infinity,
+      projectileSpeed: 700,
+      projectileColor: "#2ecc71",
       color: "#2ecc71",
     },
     // Melee, circular AoE around itself — no direction needed.
@@ -279,6 +285,7 @@ export const CONFIG = {
       damage: 23,
       attackSpeed: 1.0,
       attackType: "targeted",
+      pierce: 1, // homing shot, dies on its first hit — a future talent can raise this
       projectileSpeed: 850,
       projectileColor: "#3498db",
       color: "#3498db",
@@ -359,7 +366,7 @@ CONFIG.TALENT_TREES = {
             id: "dmg1",
             label: "Damage",
             maxPoints: 5,
-            cost: 10,
+            costs: [10, 15, 20, 25, 30],
             effect: { type: "flatDamage", perPoint: 1 },
             desc: "+1 damage per point.",
           },
@@ -367,7 +374,7 @@ CONFIG.TALENT_TREES = {
             id: "aoe",
             label: "Area of Effect",
             maxPoints: 3,
-            cost: 10,
+            costs: [10, 15, 20],
             effect: { type: "flatRange", perPoint: 20 },
             desc: "+20 attack range per point.",
           },
@@ -375,9 +382,9 @@ CONFIG.TALENT_TREES = {
             id: "atkspd",
             label: "Attack Speed",
             maxPoints: 2,
-            cost: 10,
+            costs: [10, 15, 20],
             // ASSUMPTION: the spec listed 3 reduction values (-0.3/-0.2/-0.1) but
-            // capped this node at 2 points — using the first two. Add a third
+            // capped this node at 2 points —  using the first two. Add a third
             // entry (and bump maxPoints to 3) if a 3rd level was intended.
             effect: { type: "attackInterval", perLevelReduction: [0.3, 0.2] },
             desc: "-0.3s / -0.2s attack interval per level.",
@@ -392,7 +399,7 @@ CONFIG.TALENT_TREES = {
             id: "bleed",
             label: "Bleeding",
             maxPoints: 3,
-            costs: [20, 30, 40],
+            costs: [40, 50, 60],
             exclusiveGroup: "special",
             // ASSUMPTION: spec gave +30%/+20%/+20% (totals 30/50/70% over 3/4/5s)
             // but then asked for max level to land on 100%/5s so DPS keeps
@@ -415,7 +422,7 @@ CONFIG.TALENT_TREES = {
             maxPoints: 3,
             // ASSUMPTION: cost not specified — mirrored Bleeding's cost since
             // they're the two exclusive picks in this tier.
-            costs: [20, 30, 40],
+            costs: [40, 50, 60],
             exclusiveGroup: "special",
             // Widens Slayer's cone toward a full 360°, 1/3 of the remaining
             // angle per point — computed from the base cone so it always
@@ -430,7 +437,7 @@ CONFIG.TALENT_TREES = {
             id: "dmg2",
             label: "Damage",
             maxPoints: 5,
-            cost: 10,
+            cost: [10, 20, 30, 40, 50],
             effect: { type: "flatDamage", perPoint: 1 },
             desc: "+1 damage per point.",
           },
@@ -444,25 +451,25 @@ CONFIG.TALENT_TREES = {
             id: "deepwounds",
             label: "Deep Wounds",
             maxPoints: 2,
-            cost: 20,
+            cost: 60,
             requires: { nodeId: "bleed", min: 1 },
             effect: { type: "bleedDurationReduction", perPoint: 1 },
             desc: "-1s total bleed duration per point (same total damage).",
           },
-          {
+          { 
             id: "raoe_range",
             label: "Radial Range",
-            maxPoints: 2,
-            cost: 20,
+            maxPoints: 1,
+            cost: 100,
             requires: { nodeId: "raoe", min: 1 },
-            effect: { type: "flatRange", perPoint: 30 },
+            effect: { type: "flatRange", perPoint: 50 },
             desc: "+30 attack range per point.",
           },
           {
             id: "dmg3",
             label: "Damage",
             maxPoints: 5,
-            cost: 10,
+            cost: [30, 40, 50, 60, 70],
             effect: { type: "flatDamage", perPoint: 1 },
             desc: "+1 damage per point.",
           },
@@ -476,7 +483,7 @@ CONFIG.TALENT_TREES = {
             id: "critchance",
             label: "Crit Chance",
             maxPoints: 5,
-            cost: 20,
+            cost: 30,
             effect: { type: "critChance", perLevel: [15, 10, 5, 5, 5] },
             desc: "+15/+10/+5/+5/+5% crit chance per level. Crits deal 150% damage (base).",
           },
@@ -510,7 +517,7 @@ CONFIG.TALENT_TREES = {
             maxPoints: 2,
             cost: 30,
             requires: { nodeId: "critchance", min: 1 },
-            effect: { type: "critDamage", perLevel: [30, 20] },
+            effect: { type: "critDamage", perLevel: [50, 50] },
             desc: "+30% / +20% crit damage per level (on top of the 150% base).",
           },
         ],

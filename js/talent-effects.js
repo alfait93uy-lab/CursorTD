@@ -45,6 +45,7 @@ export function getEffectiveTowerStats(towerId) {
     critChance: 0,
     critDamageMultiplier: CONFIG.BASE_CRIT_DAMAGE_MULTIPLIER,
     bleed: null,
+    pierce: def.pierce ?? 1, // projectile-only stat; melee attack types ignore it
   };
 
   const tree = getTree(towerId);

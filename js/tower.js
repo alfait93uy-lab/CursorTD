@@ -44,9 +44,13 @@ export class Tower {
     return getEffectiveTowerStats(this.typeId);
   }
 
-  /** @returns {boolean} True if this tower type aims (rotatable cone/directional). */
+  /** @returns {boolean} True if this tower type aims (rotatable cone/directional/directional-projectile). */
   isDirectional() {
-    return this.def.attackType === "cone" || this.def.attackType === "directional";
+    return (
+      this.def.attackType === "cone" ||
+      this.def.attackType === "directional" ||
+      this.def.attackType === "directionalProjectile"
+    );
   }
 
   /** @param {number} dt */
@@ -82,6 +86,15 @@ export class Tower {
         // Always swings on cooldown — hits nothing if no enemy is in the cone.
         const targets = this.getEnemiesInCone(stats);
         this.meleeAttack(targets, stats);
+        break;
+      }
+      case "directionalProjectile": {
+        // Straight-line, piercing arrow. Always fires on cooldown, same as
+        // the melee attack types — direction is randomized within the
+        // facing cone each shot, and it can hit anything that crosses its
+        // path as it travels, whether or not something was in the cone
+        // at the moment it fired.
+        this.fireDirectionalProjectile(stats);
         break;
       }
     }
@@ -168,7 +181,40 @@ export class Tower {
   fireAt(target, stats = this.getStats()) {
     const dmg = this.rollDamage(stats);
     state.projectiles.push(
-      new Projectile(this.x, this.y, target, dmg, this.def.projectileSpeed, this.def.projectileColor)
+      new Projectile({
+        x: this.x,
+        y: this.y,
+        target,
+        damage: dmg,
+        speed: this.def.projectileSpeed,
+        color: this.def.projectileColor,
+        pierce: stats.pierce,
+      })
+    );
+    this.attackCooldown = stats.attackInterval;
+  }
+
+  /**
+   * Fires a straight, piercing arrow. Direction is randomized within the
+   * facing cone each shot (not homed to a specific enemy) — see the
+   * "directionalProjectile" case in update().
+   */
+  fireDirectionalProjectile(stats = this.getStats()) {
+    const halfAngle = stats.coneAngle / 2;
+    const shotAngle = this.angle + (Math.random() * 2 - 1) * halfAngle;
+    const dmg = this.rollDamage(stats);
+
+    state.projectiles.push(
+      new Projectile({
+        x: this.x,
+        y: this.y,
+        angle: shotAngle,
+        damage: dmg,
+        speed: this.def.projectileSpeed,
+        color: this.def.projectileColor,
+        pierce: stats.pierce,
+        maxRange: stats.range,
+      })
     );
     this.attackCooldown = stats.attackInterval;
   }
