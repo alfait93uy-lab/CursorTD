@@ -1,18 +1,18 @@
 /**
  * TALENTS.JS
- * Per-tower talent trees: a sequence of tiers, each either a single "gate"
- * node or a small branch of nodes. A tier unlocks the next one once its
- * unlock rule is satisfied:
- *   - { type: "sum", threshold: N }  — N points total, any combination
- *     across the tier's nodes
- *   - { type: "each", min: N }       — every node in the tier needs at
- *     least N points individually
- * A tier can also be marked `exclusive: true` (e.g. Slayer's Specials) —
- * once any node in it has a point, the others in that tier are locked out.
+ * Per-tower talent trees: a sequence of tiers, each holding a small set of
+ * nodes. See CONFIG.TALENT_TREES (config.js) for the full data shape.
  *
- * All trees share the player's existing XP pool (CONFIG.TALENT_POINT_COST
- * per point). Spending here does NOT yet change any tower's actual combat
- * stats — that's a separate pass once the allocation system itself works.
+ * Two independent gates control what's spendable:
+ *   1. TIER gate — a tier unlocks once the PREVIOUS tier's total points
+ *      (summed across its nodes) hits CONFIG.TALENT_TIER_UNLOCK_THRESHOLD
+ *      (root uses CONFIG.TALENT_ROOT_UNLOCK_THRESHOLD instead).
+ *   2. NODE gate — within an unlocked tier, a node can also require points
+ *      in one specific earlier node (`requires`), and/or be mutually
+ *      exclusive with sibling nodes tagged with the same `exclusiveGroup`.
+ *
+ * Spending here updates state.talents; actual combat-stat effects are read
+ * out separately by talent-effects.js.
  */
 
 import { CONFIG } from "./config.js";
@@ -54,32 +54,81 @@ export function isTierUnlocked(towerId, tierIndex, tree) {
   return false;
 }
 
-/** @returns {boolean} True if a point can currently be spent on this node. */
-export function canSpendPoint(towerId, tree, tierIndex, nodeId) {
+/** @returns {{id:string,min:number}|null} A node's own prerequisite, if any. */
+function findNode(tree, nodeId) {
+  for (const tier of tree.tiers) {
+    const node = tier.nodes.find((n) => n.id === nodeId);
+    if (node) return node;
+  }
+  return null;
+}
+
+/** @returns {boolean} True if this node's own `requires` (if any) is satisfied. */
+function requirementMet(towerId, tree, node) {
+  if (!node.requires) return true;
+  return getNodePoints(towerId, node.requires.nodeId) >= node.requires.min;
+}
+
+/** @returns {boolean} True if another node sharing this node's exclusiveGroup already has points. */
+function blockedByExclusiveGroup(towerId, tree, node) {
+  if (!node.exclusiveGroup) return false;
+  for (const tier of tree.tiers) {
+    for (const other of tier.nodes) {
+      if (other.id === node.id) continue;
+      if (other.exclusiveGroup !== node.exclusiveGroup) continue;
+      if (getNodePoints(towerId, other.id) > 0) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * XP cost to buy this node's NEXT point (i.e. point number `currentPoints + 1`).
+ * Uses `costs[currentPoints]` if the node has an escalating cost array,
+ * `cost` if it has a flat one, otherwise the tree-wide default.
+ */
+export function getNodeCost(node, currentPoints) {
+  if (node.costs) return node.costs[currentPoints] ?? node.costs[node.costs.length - 1];
+  if (node.cost != null) return node.cost;
+  return CONFIG.TALENT_POINT_COST;
+}
+
+/** @returns {boolean} True if this node is currently open to receive points (ignoring XP on hand). */
+export function isNodeAvailable(towerId, tree, tierIndex, nodeId) {
   const tier = tree.tiers[tierIndex];
   const node = tier.nodes.find((n) => n.id === nodeId);
   if (!node) return false;
   if (!isTierUnlocked(towerId, tierIndex, tree)) return false;
-
   if (getNodePoints(towerId, nodeId) >= node.maxPoints) return false;
+  if (!requirementMet(towerId, tree, node)) return false;
+  if (blockedByExclusiveGroup(towerId, tree, node)) return false;
+  return true;
+}
 
-  if (tier.exclusive) {
-    const otherChosen = tier.nodes.some(
-      (n) => n.id !== nodeId && getNodePoints(towerId, n.id) > 0
-    );
-    if (otherChosen) return false;
-  }
+/** @returns {boolean} True if a point can currently be spent on this node (available AND affordable). */
+export function canSpendPoint(towerId, tree, tierIndex, nodeId) {
+  if (!isNodeAvailable(towerId, tree, tierIndex, nodeId)) return false;
 
-  return state.player.xp >= CONFIG.TALENT_POINT_COST;
+  const tier = tree.tiers[tierIndex];
+  const node = tier.nodes.find((n) => n.id === nodeId);
+  const points = getNodePoints(towerId, nodeId);
+  const cost = getNodeCost(node, points);
+
+  return state.player.xp >= cost;
 }
 
 /** Spend one XP-funded point on a node, if allowed. @returns {boolean} success */
 export function spendPoint(towerId, tree, tierIndex, nodeId) {
   if (!canSpendPoint(towerId, tree, tierIndex, nodeId)) return false;
 
-  state.player.xp -= CONFIG.TALENT_POINT_COST;
+  const tier = tree.tiers[tierIndex];
+  const node = tier.nodes.find((n) => n.id === nodeId);
+  const points = getNodePoints(towerId, nodeId);
+  const cost = getNodeCost(node, points);
+
+  state.player.xp -= cost;
   const talentState = ensureTalentState(towerId);
-  talentState[nodeId] = (talentState[nodeId] || 0) + 1;
+  talentState[nodeId] = points + 1;
   return true;
 }
 
@@ -117,22 +166,43 @@ export function renderTalentTree(container, towerId) {
 
     for (const node of tier.nodes) {
       const points = getNodePoints(towerId, node.id);
-      const canSpend = canSpendPoint(towerId, tree, tierIndex, node.id);
+      const available = unlocked && isNodeAvailable(towerId, tree, tierIndex, node.id);
+      const canSpend = unlocked && canSpendPoint(towerId, tree, tierIndex, node.id);
+      const cost = getNodeCost(node, points);
 
       const nodeEl = document.createElement("div");
       nodeEl.className = "talent-node";
       if (points >= node.maxPoints) nodeEl.classList.add("maxed");
+      if (unlocked && !available && points < node.maxPoints) nodeEl.classList.add("gated");
 
       nodeEl.innerHTML = `
         <span class="talent-node-label">${node.label}</span>
         <span class="talent-node-points">${points}/${node.maxPoints}</span>
       `;
 
+      if (node.desc) {
+        nodeEl.title = node.desc;
+      }
+
+      // Gated hint (requires / exclusivity) shown once a tier is unlocked
+      // but this particular node still isn't spendable.
+      if (unlocked && !available && points < node.maxPoints) {
+        const hint = document.createElement("span");
+        hint.className = "talent-node-hint";
+        if (node.requires) {
+          const parent = findNode(tree, node.requires.nodeId);
+          hint.textContent = `Requires ${node.requires.min} in ${parent ? parent.label : node.requires.nodeId}`;
+        } else if (node.exclusiveGroup) {
+          hint.textContent = "Locked by another choice";
+        }
+        nodeEl.appendChild(hint);
+      }
+
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "talent-node-btn";
       btn.textContent = "+";
-      btn.title = `${CONFIG.TALENT_POINT_COST} XP`;
+      btn.title = `${cost} XP`;
       btn.disabled = !canSpend;
       btn.addEventListener("click", () => {
         if (spendPoint(towerId, tree, tierIndex, node.id)) {

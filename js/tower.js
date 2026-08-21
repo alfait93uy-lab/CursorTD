@@ -1,7 +1,8 @@
 /**
  * TOWER.JS
  * Placeholder tower with combat stats + attack behavior driven by
- * CONFIG.TOWER_TYPES. Adding a new tower type (Outpost, Balista, ...) means:
+ * CONFIG.TOWER_TYPES, modified live by spent talent points (see
+ * talent-effects.js). Adding a new tower type (Outpost, Balista, ...) means:
  *   1. Add an entry to CONFIG.TOWER_TYPES (config.js) with an attackType
  *   2. If it's a new attackType, add a case to the switch in update()
  */
@@ -12,6 +13,8 @@ import { normalizeAngle, getFortWorldPos, worldToTile } from "./coords.js";
 import { isCombatPhase } from "./game-phase.js";
 import { Projectile } from "./projectile.js";
 import { drawRangeCircle, drawConeIndicator, drawRotationHandle } from "./render.js";
+import { getEffectiveTowerStats } from "./talent-effects.js";
+import { applyBleed } from "./status-effects.js";
 
 export class Tower {
   constructor(typeId, x, y) {
@@ -31,6 +34,16 @@ export class Tower {
     this.attackFlashDuration = 0.2;
   }
 
+  /**
+   * Live combat stats (base def + spent talent points), recomputed on
+   * demand rather than cached — talent points are only spent between
+   * waves, so this is cheap and always correct.
+   * @returns {{damage:number, range:number, attackInterval:number, coneAngle:number, critChance:number, critDamageMultiplier:number, bleed:object|null}}
+   */
+  getStats() {
+    return getEffectiveTowerStats(this.typeId);
+  }
+
   /** @returns {boolean} True if this tower type aims (rotatable cone/directional). */
   isDirectional() {
     return this.def.attackType === "cone" || this.def.attackType === "directional";
@@ -47,37 +60,39 @@ export class Tower {
       return; // still on cooldown, no point searching for targets
     }
 
+    const stats = this.getStats();
+
     switch (this.def.attackType) {
       case "targeted": {
         // Marksman: ranged straight projectile at the enemy closest to the Fort.
-        const target = this.findClosestToFortInRange();
-        if (target) this.fireAt(target);
+        const target = this.findClosestToFortInRange(stats);
+        if (target) this.fireAt(target, stats);
         break;
       }
       case "aoe": {
         // Striker: instant damage to every enemy in range around itself.
         // Always swings on cooldown — hits nothing if no enemy is in range.
-        const targets = this.getEnemiesInRange();
-        this.meleeAttack(targets);
+        const targets = this.getEnemiesInRange(stats);
+        this.meleeAttack(targets, stats);
         break;
       }
       case "cone":
       case "directional": {
         // Slayer / Spearman: instant damage to every enemy inside the facing cone.
         // Always swings on cooldown — hits nothing if no enemy is in the cone.
-        const targets = this.getEnemiesInCone();
-        this.meleeAttack(targets);
+        const targets = this.getEnemiesInCone(stats);
+        this.meleeAttack(targets, stats);
         break;
       }
     }
   }
 
   /** All living enemies within range (no angle restriction). */
-  getEnemiesInRange() {
+  getEnemiesInRange(stats = this.getStats()) {
     const result = [];
     for (const enemy of state.enemies) {
       if (!enemy.isAlive()) continue;
-      if (Math.hypot(enemy.x - this.x, enemy.y - this.y) <= this.def.range) {
+      if (Math.hypot(enemy.x - this.x, enemy.y - this.y) <= stats.range) {
         result.push(enemy);
       }
     }
@@ -85,8 +100,8 @@ export class Tower {
   }
 
   /** Living enemies within range AND inside the facing cone (coneAngle wide). */
-  getEnemiesInCone() {
-    const halfAngle = this.def.coneAngle / 2;
+  getEnemiesInCone(stats = this.getStats()) {
+    const halfAngle = stats.coneAngle / 2;
     const result = [];
 
     for (const enemy of state.enemies) {
@@ -95,7 +110,7 @@ export class Tower {
       const dx = enemy.x - this.x;
       const dy = enemy.y - this.y;
       const dist = Math.hypot(dx, dy);
-      if (dist > this.def.range) continue;
+      if (dist > stats.range) continue;
 
       const angleToEnemy = Math.atan2(dy, dx);
       const diff = normalizeAngle(angleToEnemy - this.angle);
@@ -108,14 +123,14 @@ export class Tower {
   }
 
   /** Nearest-to-Fort living enemy within range (Marksman targeting rule). */
-  findClosestToFortInRange() {
+  findClosestToFortInRange(stats = this.getStats()) {
     const fortPos = getFortWorldPos();
     let best = null;
     let bestFortDist = Infinity;
 
     for (const enemy of state.enemies) {
       if (!enemy.isAlive()) continue;
-      if (Math.hypot(enemy.x - this.x, enemy.y - this.y) > this.def.range) continue;
+      if (Math.hypot(enemy.x - this.x, enemy.y - this.y) > stats.range) continue;
 
       const fortDist = Math.hypot(enemy.x - fortPos.x, enemy.y - fortPos.y);
       if (fortDist < bestFortDist) {
@@ -127,28 +142,35 @@ export class Tower {
     return best;
   }
 
+  /**
+   * Roll a crit and return the damage to actually deal for one hit.
+   * @param {object} stats
+   */
+  rollDamage(stats) {
+    const isCrit = Math.random() < stats.critChance;
+    return isCrit ? stats.damage * stats.critDamageMultiplier : stats.damage;
+  }
+
   /** Instant melee hit on all given targets (cone/directional/aoe attacks). */
-  meleeAttack(targets) {
+  meleeAttack(targets, stats = this.getStats()) {
     for (const enemy of targets) {
-      enemy.takeDamage(this.def.damage);
+      const dmg = this.rollDamage(stats);
+      enemy.takeDamage(dmg);
+      if (stats.bleed) {
+        applyBleed(enemy, dmg * (stats.bleed.percent / 100), stats.bleed.duration);
+      }
     }
-    this.attackCooldown = 1 / this.def.attackSpeed;
+    this.attackCooldown = stats.attackInterval;
     this.attackFlashTimer = this.attackFlashDuration;
   }
 
   /** @param {Enemy} target Fires a homing projectile (ranged towers only). */
-  fireAt(target) {
+  fireAt(target, stats = this.getStats()) {
+    const dmg = this.rollDamage(stats);
     state.projectiles.push(
-      new Projectile(
-        this.x,
-        this.y,
-        target,
-        this.def.damage,
-        this.def.projectileSpeed,
-        this.def.projectileColor
-      )
+      new Projectile(this.x, this.y, target, dmg, this.def.projectileSpeed, this.def.projectileColor)
     );
-    this.attackCooldown = 1 / this.def.attackSpeed;
+    this.attackCooldown = stats.attackInterval;
   }
 
   /** @returns {{ col: number, row: number }} Tile the tower occupies */
@@ -228,18 +250,19 @@ export class Tower {
   drawAttackFlash(drawCtx) {
     if (this.attackFlashTimer <= 0) return;
     const alpha = this.attackFlashTimer / this.attackFlashDuration;
+    const stats = this.getStats();
 
     if (this.isDirectional()) {
-      const half = this.def.coneAngle / 2;
+      const half = stats.coneAngle / 2;
       drawCtx.beginPath();
       drawCtx.moveTo(this.x, this.y);
-      drawCtx.arc(this.x, this.y, this.def.range, this.angle - half, this.angle + half);
+      drawCtx.arc(this.x, this.y, stats.range, this.angle - half, this.angle + half);
       drawCtx.closePath();
       drawCtx.fillStyle = `rgba(255, 255, 255, ${0.5 * alpha})`;
       drawCtx.fill();
     } else if (this.def.attackType === "aoe") {
       drawCtx.beginPath();
-      drawCtx.arc(this.x, this.y, this.def.range, 0, Math.PI * 2);
+      drawCtx.arc(this.x, this.y, stats.range, 0, Math.PI * 2);
       drawCtx.fillStyle = `rgba(255, 255, 255, ${0.4 * alpha})`;
       drawCtx.fill();
     }
@@ -252,10 +275,11 @@ export class Tower {
    * @param {boolean} [valid=true]
    */
   drawRange(drawCtx, valid = true) {
-    drawRangeCircle(drawCtx, this.x, this.y, this.def.range, valid);
+    const stats = this.getStats();
+    drawRangeCircle(drawCtx, this.x, this.y, stats.range, valid);
 
     if (this.isDirectional()) {
-      drawConeIndicator(drawCtx, this.x, this.y, this.def.range, this.angle, this.def.coneAngle, valid);
+      drawConeIndicator(drawCtx, this.x, this.y, stats.range, this.angle, stats.coneAngle, valid);
       drawRotationHandle(drawCtx, this.getRotationHandlePos());
     }
   }

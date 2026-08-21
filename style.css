@@ -292,6 +292,7 @@ body {
 }
 
 .skill-tree-content {
+  position: relative;
   width: min(720px, 92vw);
   max-height: 88vh;
   overflow-y: auto;
@@ -388,17 +389,19 @@ body {
 }
 
 .skill-tree-close {
-  display: block;
-  width: 100%;
-  padding: 12px;
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  padding: 8px 14px;
   font-family: system-ui, sans-serif;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
   color: #fff;
   background: rgba(50, 50, 80, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
   cursor: pointer;
+  z-index: 1;
 }
 
 .skill-tree-close:hover {
@@ -786,6 +789,17 @@ body {
 .talent-node.maxed {
   border-color: rgba(46, 204, 113, 0.6);
   background: rgba(46, 204, 113, 0.12);
+}
+
+.talent-node.gated {
+  opacity: 0.55;
+}
+
+.talent-node-hint {
+  font-size: 10px;
+  color: rgba(231, 76, 60, 0.85);
+  text-align: center;
+  max-width: 100px;
 }
 
 .talent-node-label {

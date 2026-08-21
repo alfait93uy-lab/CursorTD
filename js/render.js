@@ -13,6 +13,7 @@ import { tileToWorldCenter } from "./coords.js";
 import { getActiveSpawnPoints } from "./spawning.js";
 import { canPlaceTower } from "./placement.js";
 import { Tower } from "./tower.js";
+import { getEffectiveTowerStats } from "./talent-effects.js";
 
 export function render() {
   ctx.fillStyle = "#1a1a2e";
@@ -124,13 +125,15 @@ function drawFort() {
 function drawTowerRanges() {
   const { placementTypeId, selected, drag, ghost } = state.towers;
 
-  // Ghost preview range while placing
+  // Ghost preview range while placing — uses live (talent-boosted) stats,
+  // since talent points apply per tower TYPE, not per instance.
   if (placementTypeId) {
     const def = CONFIG.TOWER_TYPES[placementTypeId];
-    drawRangeCircle(ctx, ghost.x, ghost.y, def.range, ghost.valid);
+    const stats = getEffectiveTowerStats(placementTypeId);
+    drawRangeCircle(ctx, ghost.x, ghost.y, stats.range, ghost.valid);
     if (def.attackType === "cone" || def.attackType === "directional") {
       // Default facing (matches Tower constructor) until the player rotates it after placing.
-      drawConeIndicator(ctx, ghost.x, ghost.y, def.range, -Math.PI / 2, def.coneAngle, ghost.valid);
+      drawConeIndicator(ctx, ghost.x, ghost.y, stats.range, -Math.PI / 2, stats.coneAngle, ghost.valid);
     }
   }
 

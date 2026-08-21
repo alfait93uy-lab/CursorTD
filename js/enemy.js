@@ -8,6 +8,7 @@ import { state } from "./state.js";
 import { tileToWorldCenter } from "./coords.js";
 import { awardXp, getEnemyXpReward } from "./skill-tree.js";
 import { damageFort } from "./fort.js";
+import { updateStatusEffects } from "./status-effects.js";
 
 export class Enemy {
   /**
@@ -58,6 +59,9 @@ export class Enemy {
 
   update(dt) {
     if (!this.isAlive() || this.reachedFort) return;
+
+    updateStatusEffects(this, dt);
+    if (!this.isAlive()) return; // a bleed tick may have just killed it
 
     const target = this.getTargetPosition();
     const dx = target.x - this.x;

@@ -289,61 +289,230 @@ export const CONFIG = {
 CONFIG.MAP_WIDTH = CONFIG.MAP_COLS * CONFIG.TILE_SIZE;
 CONFIG.MAP_HEIGHT = CONFIG.MAP_ROWS * CONFIG.TILE_SIZE;
 
-// --- Talent trees (per-tower deeper progression, spent from the same XP pool) ---
-CONFIG.TALENT_POINT_COST = 5;
+// =============================================================================
+// TALENT TREE TUNING — every number that shapes how talent trees play.
+// Change values here; nothing else needs touching for a pure numbers tweak.
+// =============================================================================
 
+// Default XP cost per point, for any node that doesn't set its own `cost`/`costs`.
+CONFIG.TALENT_POINT_COST = 10;
+
+// A tier unlocks the next one once TOTAL points spent in it (across all its
+// nodes) reaches this. Applies uniformly to every tier→next-tier gate.
+CONFIG.TALENT_TIER_UNLOCK_THRESHOLD = 5;
+
+// Root gate (tier 0) is a special case — just needs this many points spent
+// (out of its 3) to open tier 1.
+CONFIG.TALENT_ROOT_UNLOCK_THRESHOLD = 1;
+
+// Crit damage before any "Crit Damage" talent points are spent (150%).
+CONFIG.BASE_CRIT_DAMAGE_MULTIPLIER = 1.5;
+
+// Safety floors so stacked talents can't break the math (near-0 attack
+// interval, near-0 bleed duration).
+CONFIG.MIN_ATTACK_INTERVAL = 0.05;
+CONFIG.MIN_BLEED_DURATION = 1;
+
+/**
+ * --- Talent trees (per-tower deeper progression, spent from the same XP pool) ---
+ *
+ * Node shape:
+ *   id, label, maxPoints
+ *   cost: <number>            — flat XP per point (default: CONFIG.TALENT_POINT_COST)
+ *   costs: [<number>, ...]    — OR an escalating cost per point (costs[0] = 1st point, etc.)
+ *   requires: { nodeId, min } — OPTIONAL single-parent prerequisite: this many
+ *                               points must be in that node (usually from the
+ *                               tier above) before this node can be spent into.
+ *   exclusiveGroup: "name"    — OPTIONAL: only one node sharing this tag (tree-wide)
+ *                               can ever have points — picking one locks the rest.
+ *   effect: { type, ... }     — OPTIONAL: how this node changes combat stats.
+ *                               No `effect` = spendable but currently a no-op
+ *                               (used for reserved/stub nodes). See
+ *                               talent-effects.js for the full list of types.
+ *
+ * A tier unlocks once the PREVIOUS tier's own `unlock` rule is met (checked
+ * against that tier's total points spent). Nodes within an unlocked tier are
+ * further gated individually by their own `requires`/`exclusiveGroup`, if set.
+ */
 CONFIG.TALENT_TREES = {
   slayer: {
     tiers: [
       {
         id: "root",
-        nodes: [{ id: "slayer_root", label: "Slayer", maxPoints: 1 }],
-        unlock: { type: "sum", threshold: 1 },
-      },
-      {
-        id: "branch1",
+        unlock: { type: "sum", threshold: CONFIG.TALENT_ROOT_UNLOCK_THRESHOLD },
         nodes: [
-          { id: "dmg1", label: "Damage", maxPoints: 5 },
-          { id: "aoe", label: "AoE", maxPoints: 3 },
-          { id: "bleed", label: "Bleed", maxPoints: 3 },
+          {
+            id: "root",
+            label: "Slayer",
+            maxPoints: 3,
+            costs: [10, 20, 100],
+            desc: "Commit to the Slayer's talent path.",
+          },
         ],
-        unlock: { type: "sum", threshold: 5 },
       },
       {
-        id: "slayer2",
-        nodes: [{ id: "slayer2", label: "Slayer", maxPoints: 1 }],
-        unlock: { type: "sum", threshold: 1 },
-      },
-      {
-        id: "branch2",
+        id: "tier1",
+        unlock: { type: "sum", threshold: CONFIG.TALENT_TIER_UNLOCK_THRESHOLD },
         nodes: [
-          { id: "dmg2", label: "Damage", maxPoints: 5 },
-          { id: "attkspeed", label: "AttkSpeed", maxPoints: 2 },
-          { id: "raoe", label: "RAoE", maxPoints: 2 },
+          {
+            id: "dmg1",
+            label: "Damage",
+            maxPoints: 5,
+            cost: 10,
+            effect: { type: "flatDamage", perPoint: 1 },
+            desc: "+1 damage per point.",
+          },
+          {
+            id: "aoe",
+            label: "Area of Effect",
+            maxPoints: 3,
+            cost: 10,
+            effect: { type: "flatRange", perPoint: 20 },
+            desc: "+20 attack range per point.",
+          },
+          {
+            id: "atkspd",
+            label: "Attack Speed",
+            maxPoints: 2,
+            cost: 10,
+            // ASSUMPTION: the spec listed 3 reduction values (-0.3/-0.2/-0.1) but
+            // capped this node at 2 points — using the first two. Add a third
+            // entry (and bump maxPoints to 3) if a 3rd level was intended.
+            effect: { type: "attackInterval", perLevelReduction: [0.3, 0.2] },
+            desc: "-0.3s / -0.2s attack interval per level.",
+          },
         ],
-        unlock: { type: "sum", threshold: 5 },
       },
       {
-        id: "specials",
-        exclusive: true, // choose ONE of these — picking one locks the other
+        id: "tier2",
+        unlock: { type: "sum", threshold: CONFIG.TALENT_TIER_UNLOCK_THRESHOLD },
         nodes: [
-          { id: "special1", label: "1Special", maxPoints: 1 },
-          { id: "special2", label: "2Special", maxPoints: 1 },
+          {
+            id: "bleed",
+            label: "Bleeding",
+            maxPoints: 3,
+            costs: [20, 30, 40],
+            exclusiveGroup: "special",
+            // ASSUMPTION: spec gave +30%/+20%/+20% (totals 30/50/70% over 3/4/5s)
+            // but then asked for max level to land on 100%/5s so DPS keeps
+            // climbing each level instead of flattening. Implemented as total
+            // (not incremental) % per level: 30% (10%/s) -> 50% (12.5%/s) ->
+            // 100% (20%/s). Tune the `percent` values below directly.
+            effect: {
+              type: "bleed",
+              levels: [
+                { percent: 30, duration: 3 },
+                { percent: 50, duration: 4 },
+                { percent: 100, duration: 5 },
+              ],
+            },
+            desc: "On-hit bleed: 30% / 50% / 100% of hit damage over 3s / 4s / 5s.",
+          },
+          {
+            id: "raoe",
+            label: "Radial AoE",
+            maxPoints: 3,
+            // ASSUMPTION: cost not specified — mirrored Bleeding's cost since
+            // they're the two exclusive picks in this tier.
+            costs: [20, 30, 40],
+            exclusiveGroup: "special",
+            // Widens Slayer's cone toward a full 360°, 1/3 of the remaining
+            // angle per point — computed from the base cone so it always
+            // reaches exactly 360° at max, even if the base cone changes.
+            effect: {
+              type: "coneAngle",
+              perPoint: (Math.PI * 2 - CONFIG.TOWER_TYPES.slayer.coneAngle) / 3,
+            },
+            desc: "Widens the attack cone toward a full 360° circle.",
+          },
+          {
+            id: "dmg2",
+            label: "Damage",
+            maxPoints: 5,
+            cost: 10,
+            effect: { type: "flatDamage", perPoint: 1 },
+            desc: "+1 damage per point.",
+          },
         ],
-        unlock: { type: "sum", threshold: 1 },
       },
       {
-        id: "final",
+        id: "tier3",
+        unlock: { type: "sum", threshold: CONFIG.TALENT_TIER_UNLOCK_THRESHOLD },
         nodes: [
-          { id: "dmg3", label: "Damage", maxPoints: 2 },
-          { id: "crit", label: "Crit", maxPoints: 2 },
+          {
+            id: "deepwounds",
+            label: "Deep Wounds",
+            maxPoints: 2,
+            cost: 20,
+            requires: { nodeId: "bleed", min: 1 },
+            effect: { type: "bleedDurationReduction", perPoint: 1 },
+            desc: "-1s total bleed duration per point (same total damage).",
+          },
+          {
+            id: "raoe_range",
+            label: "Radial Range",
+            maxPoints: 2,
+            cost: 20,
+            requires: { nodeId: "raoe", min: 1 },
+            effect: { type: "flatRange", perPoint: 30 },
+            desc: "+30 attack range per point.",
+          },
+          {
+            id: "dmg3",
+            label: "Damage",
+            maxPoints: 5,
+            cost: 10,
+            effect: { type: "flatDamage", perPoint: 1 },
+            desc: "+1 damage per point.",
+          },
         ],
-        unlock: { type: "each", min: 1 }, // both need at least 1 point
       },
       {
-        id: "ultimate",
-        nodes: [{ id: "ultimate", label: "Ultimate", maxPoints: 1 }],
+        id: "tier4",
+        unlock: { type: "sum", threshold: CONFIG.TALENT_TIER_UNLOCK_THRESHOLD },
+        nodes: [
+          {
+            id: "critchance",
+            label: "Crit Chance",
+            maxPoints: 5,
+            cost: 20,
+            effect: { type: "critChance", perLevel: [15, 10, 5, 5, 5] },
+            desc: "+15/+10/+5/+5/+5% crit chance per level. Crits deal 150% damage (base).",
+          },
+          {
+            id: "bleed_plus",
+            label: "Bleeding+",
+            maxPoints: 1,
+            // TBD: reserved slot, no effect defined yet — placeholder cost.
+            cost: 10,
+            requires: { nodeId: "bleed", min: 1 },
+            desc: "Reserved — effect not designed yet.",
+          },
+          {
+            id: "raoe_plus",
+            label: "Radial AoE+",
+            maxPoints: 1,
+            // TBD: reserved slot, no effect defined yet — placeholder cost.
+            cost: 10,
+            requires: { nodeId: "raoe", min: 1 },
+            desc: "Reserved — effect not designed yet.",
+          },
+        ],
+      },
+      {
+        id: "tier5",
         unlock: null, // last tier
+        nodes: [
+          {
+            id: "critdamage",
+            label: "Crit Damage",
+            maxPoints: 2,
+            cost: 30,
+            requires: { nodeId: "critchance", min: 1 },
+            effect: { type: "critDamage", perLevel: [30, 20] },
+            desc: "+30% / +20% crit damage per level (on top of the 150% base).",
+          },
+        ],
       },
     ],
   },
