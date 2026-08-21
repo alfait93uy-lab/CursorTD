@@ -39,6 +39,11 @@ export function grantTowerUnlock(towerId) {
   renderTowerBar();
 }
 
+/** Re-render the tower bar (counts/caps can change on any talent spend, not just unlock). */
+export function refreshTowerBar() {
+  renderTowerBar();
+}
+
 /** Update XP display in the HUD and skill tree panel. */
 export function updateXpUI() {
   const text = `XP: ${state.player.xp}`;

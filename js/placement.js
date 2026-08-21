@@ -13,6 +13,7 @@ import { Tower } from "./tower.js";
 import { isTowerUnlocked } from "./skill-tree.js";
 import { isPlacementPhase } from "./game-phase.js";
 import { getActiveSpawnPoints } from "./spawning.js";
+import { getEffectiveTowerStats } from "./talent-effects.js";
 
 /** @returns {boolean} True if the tile is reserved for spawn or fort. */
 export function isReservedTile(col, row) {
@@ -91,7 +92,8 @@ function wouldSealPath(col, row) {
  */
 export function canPlaceTower(x, y, typeId, ignoreTower = null) {
   if (!isTowerUnlocked(typeId)) return false;
-  if (countTowersOfType(typeId, ignoreTower) >= CONFIG.TOWER_TYPES[typeId].maxCount) return false;
+  const maxCount = getEffectiveTowerStats(typeId).maxCount;
+  if (countTowersOfType(typeId, ignoreTower) >= maxCount) return false;
 
   const { col, row } = worldToTile(x, y);
 
@@ -182,12 +184,13 @@ export function renderTowerBar() {
     btn.title = `${def.label} — click to select, then place on map`;
 
     const count = countTowersOfType(typeId);
-    const atCap = count >= def.maxCount;
+    const maxCount = getEffectiveTowerStats(typeId).maxCount;
+    const atCap = count >= maxCount;
 
     btn.innerHTML = `
       <span class="tower-btn-icon tower-icon-${typeId}"></span>
       <span class="tower-btn-label">${def.label}</span>
-      <span class="tower-btn-count">${count}/${def.maxCount}</span>
+      <span class="tower-btn-count">${count}/${maxCount}</span>
     `;
 
     if (atCap) {

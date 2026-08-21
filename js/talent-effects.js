@@ -46,6 +46,7 @@ export function getEffectiveTowerStats(towerId) {
     critDamageMultiplier: CONFIG.BASE_CRIT_DAMAGE_MULTIPLIER,
     bleed: null,
     pierce: def.pierce ?? 1, // projectile-only stat; melee attack types ignore it
+    maxCount: def.maxCount, // placement cap; talent-driven trees usually raise this from a 0 base
   };
 
   const tree = getTree(towerId);
@@ -89,6 +90,9 @@ export function getEffectiveTowerStats(towerId) {
           break;
         case "bleedDurationReduction":
           bleedDurationReduction += eff.perPoint * points;
+          break;
+        case "towerCap":
+          stats.maxCount += eff.perPoint * points;
           break;
       }
     }
