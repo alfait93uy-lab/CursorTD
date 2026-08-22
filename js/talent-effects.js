@@ -24,6 +24,8 @@
  *                                                     random in-range enemy, CONFIG.BONUS_ARROW_DELAY later
  *   bonusArrowCount          { perPoint }            perPoint*points extra arrows added on top of the base 1
  *                                                     whenever bonusArrowChance triggers
+ *   coneAngleMultiplier      { perPoint }            coneAngle *= (1 + perPoint*points), applied after all
+ *                                                     additive coneAngle nodes (Spearman: Focus Fire)
  *
  * Nodes with no `effect` field (reserved/stub nodes) are simply skipped.
  */
@@ -74,6 +76,7 @@ export function getEffectiveTowerStats(towerId) {
   let critDamagePoints = 0;
   let damageVsTierMultiplier = 0;
   let damageVsTierTiers = null;
+  let coneAngleMultiplier = 0;
 
   for (const tier of tree.tiers) {
     for (const node of tier.nodes) {
@@ -128,12 +131,19 @@ export function getEffectiveTowerStats(towerId) {
         case "bonusArrowCount":
           stats.bonusArrowCount += eff.perPoint * points;
           break;
+        case "coneAngleMultiplier":
+          coneAngleMultiplier += eff.perPoint * points;
+          break;
       }
     }
   }
 
   if (damageVsTierTiers) {
     stats.damageVsTier = { tiers: damageVsTierTiers, multiplier: 1 + damageVsTierMultiplier };
+  }
+
+  if (coneAngleMultiplier !== 0) {
+    stats.coneAngle = Math.max(0, stats.coneAngle * (1 + coneAngleMultiplier));
   }
 
   stats.critChance = Math.min(1, critChancePoints / 100);

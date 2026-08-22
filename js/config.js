@@ -259,7 +259,7 @@ export const CONFIG = {
     spearman: {
       id: "spearman",
       label: "Spearman",
-      maxCount: 2, // base cap; skill tree can raise this later
+      maxCount: 0, // base cap — fully driven by the talent tree's Root node (see CONFIG.TALENT_TREES.spearman)
       radius: 28,
       range: 356,
       damage: 16,
@@ -710,7 +710,150 @@ CONFIG.TALENT_TREES = {
       },
     ],
   },
-  // spearman / striker talent trees not designed yet
+  /**
+   * Spearman: no per-node `requires` chains at all (per the user, unlike
+   * Slayer/Marksman) — every node is gated purely by its tier's point
+   * threshold (5/10/15 total, same chained-tier mechanism as every other
+   * tree). T1 has 3 nodes but T2/T3 only 2 (Attack Speed, Crit% — Damage
+   * and Attack Range are single-tier, T1-only boosts, nothing beyond).
+   * T4 is a mutually-exclusive choice of 1, via the existing
+   * `exclusiveGroup` mechanism (same pattern as Slayer's tier4 stub nodes).
+   *
+   * NUMBERS BELOW ARE ASSUMPTIONS — the spec gave node names/branching but
+   * no magnitudes (except the two explicit "0/5"s). Flagged per-node; tune
+   * directly once play-tested.
+   */
+  spearman: {
+    tiers: [
+      {
+        id: "root",
+        unlock: { type: "sum", threshold: CONFIG.TALENT_ROOT_UNLOCK_THRESHOLD },
+        nodes: [
+          {
+            id: "root",
+            label: "Spearman",
+            maxPoints: 3,
+            costs: [10, 20, 100],
+            unlocksTower: true,
+            effect: { type: "towerCap", perPoint: 1 },
+            desc: "Commit to the Spearman's talent path. Each point unlocks (1st) and allows placing (each) one more Spearman tower.",
+          },
+        ],
+      },
+      {
+        id: "tier1",
+        unlock: { type: "sum", threshold: CONFIG.TALENT_TIER_UNLOCK_THRESHOLD },
+        nodes: [
+          {
+            id: "damage1",
+            label: "Damage",
+            maxPoints: 5,
+            cost: 10,
+            effect: { type: "flatDamage", perPoint: 3 },
+            desc: "+3 damage per point.",
+          },
+          {
+            id: "range1",
+            label: "Attack Range",
+            maxPoints: 3,
+            cost: 10,
+            // T1-only — doesn't continue past tier1, unlike Damage/A.Speed.
+            effect: { type: "flatRange", perPoint: 40 },
+            desc: "+40 attack range per point.",
+          },
+          {
+            id: "aspeed1",
+            label: "Attack Speed",
+            maxPoints: 3,
+            cost: 10,
+            effect: { type: "attackInterval", perLevelReduction: [0.05, 0.05, 0.05] },
+            desc: "-0.05s attack interval per point.",
+          },
+        ],
+      },
+      {
+        id: "tier2",
+        unlock: { type: "sum", threshold: CONFIG.TALENT_TIER_UNLOCK_THRESHOLD },
+        nodes: [
+          {
+            id: "aspeed2",
+            label: "Attack Speed",
+            maxPoints: 5,
+            cost: 15,
+            effect: { type: "attackInterval", perLevelReduction: [0.04, 0.04, 0.04, 0.04, 0.04] },
+            desc: "-0.04s attack interval per point.",
+          },
+          {
+            id: "critchance2",
+            label: "Crit %",
+            maxPoints: 5,
+            cost: 15,
+            effect: { type: "critChance", perLevel: [8, 7, 6, 5, 4] },
+            desc: "+8/+7/+6/+5/+4% crit chance per level.",
+          },
+        ],
+      },
+      {
+        id: "tier3",
+        unlock: { type: "sum", threshold: CONFIG.TALENT_TIER_UNLOCK_THRESHOLD },
+        nodes: [
+          {
+            id: "aspeed3",
+            label: "Attack Speed",
+            maxPoints: 5,
+            cost: 20,
+            effect: { type: "attackInterval", perLevelReduction: [0.03, 0.03, 0.03, 0.03, 0.03] },
+            desc: "-0.03s attack interval per point.",
+          },
+          {
+            id: "critchance3",
+            label: "Crit %",
+            maxPoints: 5,
+            cost: 20,
+            effect: { type: "critChance", perLevel: [6, 5, 5, 4, 4] },
+            desc: "+6/+5/+5/+4/+4% crit chance per level.",
+          },
+        ],
+      },
+      {
+        id: "tier4",
+        unlock: null, // last tier
+        nodes: [
+          {
+            id: "critdamage4",
+            label: "Crit Damage",
+            maxPoints: 1,
+            cost: 30,
+            exclusiveGroup: "spearman_t4",
+            effect: { type: "critDamage", perLevel: [40] },
+            desc: "+40% crit damage (on top of the 150% base). Choose one tier-4 talent.",
+          },
+          {
+            id: "focusfire4",
+            label: "Focus Fire",
+            maxPoints: 1,
+            cost: 30,
+            exclusiveGroup: "spearman_t4",
+            // ASSUMPTION: halves the cone spread (tighter, more concentrated shots).
+            effect: { type: "coneAngleMultiplier", perPoint: -0.5 },
+            desc: "Halves the attack cone's spread. Choose one tier-4 talent.",
+          },
+          {
+            id: "extraattack4",
+            label: "Extra Attack",
+            maxPoints: 2,
+            cost: 30,
+            exclusiveGroup: "spearman_t4",
+            // ASSUMPTION: +15% chance per point (max 30%) to also fire a 2nd
+            // shot CONFIG.BONUS_ARROW_DELAY later, same cone/direction logic.
+            effect: { type: "bonusArrowChance", perPoint: 0.15 },
+            desc: "+15% chance per point to fire an additional attack (0.1s delay). Choose one tier-4 talent.",
+          },
+        ],
+      },
+    ],
+  },
+  // striker talent tree not designed yet
 };
 
 // --- Main Menu: map select ---
@@ -726,8 +869,8 @@ CONFIG.MAPS = [
     label: "Map 1",
     designWaveCount: 10,
     requiresMapId: null,
-    bgImage: "Map1.jpg",
-    defaultBlockedTiles: [[22,10],[23,10],[24,10],[25,10],[26,10],[27,10],[20,11],[21,11],[22,11],[27,11],[28,11],[29,11],[19,12],[20,12],[30,12],[19,13],[31,13],[32,13],[18,14],[32,14],[18,15],[32,15],[18,16],[31,16],[32,16],[19,17],[31,17],[20,18],[21,18],[30,18],[31,18],[21,19],[22,19],[28,19],[29,19],[22,20],[26,20],[27,20],[28,20],[22,21],[23,21],[24,21],[25,21],[26,21]]
+    bgImage: "Map1.png",
+    defaultBlockedTiles: [],
   },
   { id: "map2", label: "Map 2", designWaveCount: 10, requiresMapId: "map1", defaultBlockedTiles: [] },
   { id: "map3", label: "Map 3", designWaveCount: 10, requiresMapId: "map2", defaultBlockedTiles: [] },

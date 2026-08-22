@@ -37,9 +37,15 @@ export function updatePendingShots(dt) {
   state.pendingShots = remaining;
 }
 
-/** Fires one delayed bonus arrow at a freshly-picked random in-range target. Wasted (no shot) if nothing's in range anymore. */
+/** Fires one delayed bonus arrow. Wasted (no shot) if nothing's in range anymore — homing towers only, cone towers always fire forward regardless of range. */
 function fireBonusArrow(tower) {
   const stats = tower.getStats();
+
+  if (tower.def.attackType === "directionalProjectile") {
+    tower.fireDirectionalProjectile(stats, true);
+    return;
+  }
+
   const target = tower.findRandomInRange(stats);
   if (!target || !target.isAlive()) return;
 
@@ -280,8 +286,11 @@ export class Tower {
    * Fires a straight, piercing arrow. Direction is randomized within the
    * facing cone each shot (not homed to a specific enemy) — see the
    * "directionalProjectile" case in update().
+   * @param {boolean} isBonusShot Set by a delayed Extra Attack bonus shot
+   *   (see fireBonusArrow below) — skips resetting the cooldown and skips
+   *   rolling its own bonus-attack chance, so procs can't cascade.
    */
-  fireDirectionalProjectile(stats = this.getStats()) {
+  fireDirectionalProjectile(stats = this.getStats(), isBonusShot = false) {
     const halfAngle = stats.coneAngle / 2;
     const shotAngle = this.angle + (Math.random() * 2 - 1) * halfAngle;
     const dmg = this.rollDamage(stats);
@@ -298,7 +307,10 @@ export class Tower {
         maxRange: stats.range,
       })
     );
+
+    if (isBonusShot) return;
     this.attackCooldown = stats.attackInterval;
+    this.maybeFireBonusArrows(stats);
   }
 
   /** @returns {{ col: number, row: number }} Tile the tower occupies */
