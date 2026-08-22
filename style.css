@@ -126,6 +126,25 @@ body {
   background: rgba(50, 50, 80, 0.95);
 }
 
+#export-map-btn {
+  position: fixed;
+  top: 12px;
+  left: 660px;
+  z-index: 10;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-family: system-ui, sans-serif;
+  color: #fff;
+  background: rgba(30, 30, 50, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#export-map-btn:hover {
+  background: rgba(50, 50, 80, 0.95);
+}
+
 #xp-display {
   position: fixed;
   top: 14px;

@@ -726,8 +726,8 @@ CONFIG.MAPS = [
     label: "Map 1",
     designWaveCount: 10,
     requiresMapId: null,
-    bgImage: "Map1.jpg",
-    defaultBlockedTiles: [[22,10],[23,10],[24,10],[25,10],[26,10],[27,10],[20,11],[21,11],[22,11],[27,11],[28,11],[29,11],[19,12],[20,12],[30,12],[19,13],[31,13],[32,13],[18,14],[32,14],[18,15],[32,15],[18,16],[31,16],[32,16],[19,17],[31,17],[20,18],[21,18],[30,18],[31,18],[21,19],[22,19],[28,19],[29,19],[22,20],[26,20],[27,20],[28,20],[22,21],[23,21],[24,21],[25,21],[26,21]]
+    bgImage: "Map1.png",
+    defaultBlockedTiles: [],
   },
   { id: "map2", label: "Map 2", designWaveCount: 10, requiresMapId: "map1", defaultBlockedTiles: [] },
   { id: "map3", label: "Map 3", designWaveCount: 10, requiresMapId: "map2", defaultBlockedTiles: [] },
