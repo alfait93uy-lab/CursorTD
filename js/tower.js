@@ -14,7 +14,7 @@ import { isCombatPhase } from "./game-phase.js";
 import { Projectile } from "./projectile.js";
 import { drawRangeCircle, drawConeIndicator, drawRotationHandle } from "./render.js";
 import { getEffectiveTowerStats } from "./talent-effects.js";
-import { applyBleed } from "./status-effects.js";
+import { applyBleed, applySlow } from "./status-effects.js";
 
 /**
  * Ticks state.pendingShots (Marksman's delayed Bonus Arrow talent) and
@@ -70,6 +70,7 @@ export class Tower {
     this.x = x;
     this.y = y;
     this.attackCooldown = 0;
+    this.attackCount = 0; // connecting attacks only (see meleeAttack) — Striker: Resonant Hammer / Echo Strike
 
     // --- Phase 8: facing direction (radians). Only used by cone/directional towers,
     // but harmless to keep on every tower. Default: facing "up" (north). ---
@@ -231,11 +232,25 @@ export class Tower {
 
   /** Instant melee hit on all given targets (cone/directional/aoe attacks). */
   meleeAttack(targets, stats = this.getStats()) {
+    // ASSUMPTION: "every Nth attack" counts connecting swings only (targets.length > 0)
+    // — an aoe/cone swing that lands on nothing doesn't consume a proc.
+    if (targets.length > 0) {
+      this.attackCount++;
+    }
+
+    const resonantProcs = stats.resonantHammer && this.attackCount % stats.resonantHammer.interval === 0;
+    const echoProcs = stats.echoStrike && this.attackCount % stats.echoStrike.interval === 0;
+
     for (const enemy of targets) {
-      const dmg = this.rollDamage(stats, enemy);
+      let dmg = this.rollDamage(stats, enemy);
+      if (echoProcs) dmg *= 2;
+
       enemy.takeDamage(dmg);
       if (stats.bleed) {
         applyBleed(enemy, dmg * (stats.bleed.percent / 100), stats.bleed.duration);
+      }
+      if (resonantProcs) {
+        applySlow(enemy, stats.resonantHammer.percent, stats.resonantHammer.duration);
       }
     }
     this.attackCooldown = stats.attackInterval;

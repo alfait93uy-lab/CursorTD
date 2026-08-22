@@ -33,6 +33,7 @@ export class Enemy {
     this.fortDamage = typeDef.fortDamage;
     this.dead = false;
     this.reachedFort = false;
+    this.speedMultiplier = 1; // set each frame by updateStatusEffects (e.g. a Resonant Hammer slow)
 
     const start = tileToWorldCenter(path[0].col, path[0].row);
     this.x = start.x;
@@ -82,7 +83,7 @@ export class Enemy {
       return this.update(dt);
     }
 
-    const step = Math.min(this.speed * dt, distance);
+    const step = Math.min(this.speed * this.speedMultiplier * dt, distance);
     this.x += (dx / distance) * step;
     this.y += (dy / distance) * step;
   }

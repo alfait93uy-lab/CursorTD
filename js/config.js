@@ -275,7 +275,7 @@ export const CONFIG = {
     striker: {
       id: "striker",
       label: "Striker",
-      maxCount: 1, // base cap; skill tree can raise this later
+      maxCount: 0, // base cap — fully driven by the talent tree's Root node (see CONFIG.TALENT_TREES.striker)
       radius: 26,
       range: 180,
       damage: 10,
@@ -853,7 +853,153 @@ CONFIG.TALENT_TREES = {
       },
     ],
   },
-  // striker talent tree not designed yet
+  /**
+   * Striker: Root is a single point (0/1), not 3 like the other trees — per
+   * the user. T2 introduces two new "every Nth connecting attack" procs
+   * (Resonant Hammer: fixed interval, scaling magnitude/duration; Echo
+   * Strike: scaling interval, fixed magnitude) — see periodicSlow /
+   * periodicDoubleDamage in talent-effects.js and the attackCount tracking
+   * in tower.js's meleeAttack. T3/T4 branch by `requires` off T2's two
+   * nodes (Resonant Hammer branch, Echo Strike branch), same requires
+   * mechanism as Slayer/Marksman.
+   *
+   * NUMBERS BELOW ARE ASSUMPTIONS — the spec gave node names/branching but
+   * no magnitudes beyond Resonant/Echo's own explicit per-rank numbers.
+   * Flagged per-node; tune directly once play-tested.
+   */
+  striker: {
+    tiers: [
+      {
+        id: "root",
+        unlock: { type: "sum", threshold: CONFIG.TALENT_ROOT_UNLOCK_THRESHOLD },
+        nodes: [
+          {
+            id: "root",
+            label: "Striker",
+            maxPoints: 1,
+            cost: 10,
+            unlocksTower: true,
+            effect: { type: "towerCap", perPoint: 1 },
+            desc: "Unlocks the Striker tower.",
+          },
+        ],
+      },
+      {
+        id: "tier1",
+        unlock: { type: "sum", threshold: CONFIG.TALENT_TIER_UNLOCK_THRESHOLD },
+        nodes: [
+          {
+            id: "aspeed1",
+            label: "Attack Speed",
+            maxPoints: 5,
+            cost: 10,
+            effect: { type: "attackInterval", perLevelReduction: [0.03, 0.03, 0.03, 0.03, 0.03] },
+            desc: "-0.03s attack interval per point.",
+          },
+          {
+            id: "damage1",
+            label: "Damage",
+            maxPoints: 5,
+            cost: 10,
+            effect: { type: "flatDamage", perPoint: 2 },
+            desc: "+2 damage per point.",
+          },
+        ],
+      },
+      {
+        id: "tier2",
+        unlock: { type: "sum", threshold: CONFIG.TALENT_TIER_UNLOCK_THRESHOLD },
+        nodes: [
+          {
+            id: "resonanthammer",
+            label: "Resonant Hammer",
+            maxPoints: 3,
+            cost: 15,
+            // Fixed every-4th-attack interval; only slow%/duration scale with rank.
+            effect: {
+              type: "periodicSlow",
+              interval: 4,
+              perLevel: [
+                { percent: 10, duration: 1 },
+                { percent: 20, duration: 2 },
+                { percent: 30, duration: 3 },
+              ],
+            },
+            desc: "Every 4th connecting attack slows every enemy hit: 10%/1s, 20%/2s, 30%/3s per level.",
+          },
+          {
+            id: "echostrike",
+            label: "Echo Strike",
+            maxPoints: 3,
+            cost: 15,
+            // Fixed double-damage magnitude; the trigger interval itself shortens with rank.
+            effect: { type: "periodicDoubleDamage", perLevel: [5, 4, 3] },
+            desc: "Every 5th/4th/3rd connecting attack (by level) deals double damage to every enemy hit.",
+          },
+        ],
+      },
+      {
+        id: "tier3",
+        unlock: { type: "sum", threshold: CONFIG.TALENT_TIER_UNLOCK_THRESHOLD },
+        nodes: [
+          {
+            id: "resonantaoe3",
+            label: "AoE",
+            maxPoints: 2,
+            cost: 20,
+            requires: { nodeId: "resonanthammer", min: 1 },
+            // ASSUMPTION: "AoE" = bigger attack radius, since Striker's base
+            // attack already hits everything in range each swing.
+            effect: { type: "flatRange", perPoint: 25 },
+            desc: "+25 attack range per point.",
+          },
+          {
+            id: "echoaspeed3",
+            label: "Attack Speed",
+            maxPoints: 3,
+            cost: 20,
+            requires: { nodeId: "echostrike", min: 1 },
+            effect: { type: "attackInterval", perLevelReduction: [0.02, 0.02, 0.02] },
+            desc: "-0.02s attack interval per point.",
+          },
+        ],
+      },
+      {
+        id: "tier4",
+        unlock: null, // last tier
+        nodes: [
+          {
+            id: "resonantcap4",
+            label: "Striker",
+            maxPoints: 1,
+            cost: 30,
+            requires: { nodeId: "resonantaoe3", min: 1 },
+            // A 2nd copy of the Root's unlock effect — raises the placement cap again.
+            effect: { type: "towerCap", perPoint: 1 },
+            desc: "+1 max Striker towers placeable.",
+          },
+          {
+            id: "echoaoe4",
+            label: "AoE",
+            maxPoints: 2,
+            cost: 30,
+            requires: { nodeId: "echoaspeed3", min: 1 },
+            effect: { type: "flatRange", perPoint: 25 },
+            desc: "+25 attack range per point.",
+          },
+          {
+            id: "echodamage4",
+            label: "Damage",
+            maxPoints: 3,
+            cost: 30,
+            requires: { nodeId: "echoaspeed3", min: 1 },
+            effect: { type: "flatDamage", perPoint: 3 },
+            desc: "+3 damage per point.",
+          },
+        ],
+      },
+    ],
+  },
 };
 
 // --- Main Menu: map select ---

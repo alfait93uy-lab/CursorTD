@@ -26,6 +26,13 @@
  *                                                     whenever bonusArrowChance triggers
  *   coneAngleMultiplier      { perPoint }            coneAngle *= (1 + perPoint*points), applied after all
  *                                                     additive coneAngle nodes (Spearman: Focus Fire)
+ *   periodicSlow             { interval, perLevel[] } every `interval`th connecting attack (fixed, doesn't
+ *                                                     scale with rank) applies perLevel[points-1] = {percent,
+ *                                                     duration} slow to every enemy hit that swing (Striker:
+ *                                                     Resonant Hammer)
+ *   periodicDoubleDamage     { perLevel[] }          every perLevel[points-1]th connecting attack (this
+ *                                                     interval itself shortens with rank) deals double damage
+ *                                                     to every enemy hit that swing (Striker: Echo Strike)
  *
  * Nodes with no `effect` field (reserved/stub nodes) are simply skipped.
  */
@@ -64,6 +71,8 @@ export function getEffectiveTowerStats(towerId) {
     executeTiers: [],
     bonusArrowChance: 0, // Marksman: Bonus Arrow
     bonusArrowCount: 0, // Marksman: Additional Arrow Count
+    resonantHammer: null, // { interval, percent, duration } | null — Striker: Resonant Hammer
+    echoStrike: null, // { interval } | null — Striker: Echo Strike
   };
 
   const tree = getTree(towerId);
@@ -133,6 +142,17 @@ export function getEffectiveTowerStats(towerId) {
           break;
         case "coneAngleMultiplier":
           coneAngleMultiplier += eff.perPoint * points;
+          break;
+        case "periodicSlow":
+          if (points > 0) {
+            const level = eff.perLevel[points - 1];
+            stats.resonantHammer = { interval: eff.interval, percent: level.percent, duration: level.duration };
+          }
+          break;
+        case "periodicDoubleDamage":
+          if (points > 0) {
+            stats.echoStrike = { interval: eff.perLevel[points - 1] };
+          }
           break;
       }
     }

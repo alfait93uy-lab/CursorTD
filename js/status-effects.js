@@ -30,20 +30,50 @@ export function applyBleed(enemy, totalDamage, duration) {
   });
 }
 
+/**
+ * Apply (or refresh) a slow on an enemy. A new slow from the same source
+ * REPLACES any existing slow rather than stacking (same convention as
+ * bleed above). Sets enemy.speedMultiplier via updateStatusEffects, which
+ * Enemy.update() applies to movement.
+ * @param {import("./enemy.js").Enemy} enemy
+ * @param {number} percent - 0-100, how much to slow by
+ * @param {number} duration - seconds
+ */
+export function applySlow(enemy, percent, duration) {
+  if (!enemy.statusEffects) enemy.statusEffects = [];
+  enemy.statusEffects = enemy.statusEffects.filter((e) => e.type !== "slow");
+
+  enemy.statusEffects.push({
+    type: "slow",
+    remaining: duration,
+    multiplier: Math.max(0, 1 - percent / 100),
+  });
+}
+
 /** Advance all of an enemy's active status effects by dt. Call from Enemy.update(). */
 export function updateStatusEffects(enemy, dt) {
+  enemy.speedMultiplier = 1;
   if (!enemy.statusEffects || enemy.statusEffects.length === 0) return;
 
   for (const effect of enemy.statusEffects) {
-    effect.tickTimer -= dt;
-    while (effect.tickTimer <= 0 && effect.remainingTicks > 0) {
-      if (!enemy.isAlive()) break;
-      enemy.takeDamage(effect.damagePerTick);
-      effect.remainingTicks--;
-      effect.tickTimer += effect.tickInterval;
+    if (effect.type === "bleed") {
+      effect.tickTimer -= dt;
+      while (effect.tickTimer <= 0 && effect.remainingTicks > 0) {
+        if (!enemy.isAlive()) break;
+        enemy.takeDamage(effect.damagePerTick);
+        effect.remainingTicks--;
+        effect.tickTimer += effect.tickInterval;
+      }
+    } else if (effect.type === "slow") {
+      effect.remaining -= dt;
+      if (effect.remaining > 0) enemy.speedMultiplier = effect.multiplier;
     }
     if (!enemy.isAlive()) break;
   }
 
-  enemy.statusEffects = enemy.statusEffects.filter((e) => e.remainingTicks > 0);
+  enemy.statusEffects = enemy.statusEffects.filter(
+    (e) =>
+      (e.type === "bleed" && e.remainingTicks > 0) ||
+      (e.type === "slow" && e.remaining > 0)
+  );
 }
