@@ -205,8 +205,132 @@ export const CONFIG = {
       { type: "scout", count: 20, packSize: 3 },
       { type: "tough", count: 8 },
       { type: "elite", count: 3 },
-      ],
-    },
+    ],
+  },
+  // Waves 11-20 (Aug 22): continues the same accelerating monsterValue
+  // curve as 1-10 by feel, not a strict formula — activeSpawnPoints stays
+  // at 3 (only 3 of the 5 SPAWN_POINTS slots are populated right now, see
+  // above). Not yet play-tested; tune counts/period directly.
+  {
+    number: 11,
+    monsterValue: 800, // (15*10) + (20*8) + (10*25) + (4*60)
+    period: 13,
+    activeSpawnPoints: 3,
+    groups: [
+      { type: "basic", count: 15 },
+      { type: "scout", count: 20, packSize: 3 },
+      { type: "tough", count: 10 },
+      { type: "elite", count: 4 },
+    ],
+  },
+  {
+    number: 12,
+    monsterValue: 956, // (18*10) + (22*8) + (12*25) + (5*60)
+    period: 14,
+    activeSpawnPoints: 3,
+    groups: [
+      { type: "basic", count: 18 },
+      { type: "scout", count: 22, packSize: 3 },
+      { type: "tough", count: 12 },
+      { type: "elite", count: 5 },
+    ],
+  },
+  {
+    number: 13,
+    monsterValue: 1110, // (20*10) + (25*8) + (14*25) + (6*60)
+    period: 15,
+    activeSpawnPoints: 3,
+    groups: [
+      { type: "basic", count: 20 },
+      { type: "scout", count: 25, packSize: 3 },
+      { type: "tough", count: 14 },
+      { type: "elite", count: 6 },
+    ],
+  },
+  {
+    number: 14,
+    monsterValue: 1314, // (22*10) + (28*8) + (18*25) + (7*60)
+    period: 16,
+    activeSpawnPoints: 3,
+    groups: [
+      { type: "basic", count: 22 },
+      { type: "scout", count: 28, packSize: 3 },
+      { type: "tough", count: 18 },
+      { type: "elite", count: 7 },
+    ],
+  },
+  {
+    number: 15,
+    monsterValue: 1540, // (25*10) + (30*8) + (18*25) + (10*60)
+    period: 17,
+    activeSpawnPoints: 3,
+    groups: [
+      { type: "basic", count: 25 },
+      { type: "scout", count: 30, packSize: 3 },
+      { type: "tough", count: 18 },
+      { type: "elite", count: 10 },
+    ],
+  },
+  {
+    number: 16,
+    monsterValue: 1716, // (30*10) + (32*8) + (20*25) + (11*60)
+    period: 18,
+    activeSpawnPoints: 3,
+    groups: [
+      { type: "basic", count: 30 },
+      { type: "scout", count: 32, packSize: 3 },
+      { type: "tough", count: 20 },
+      { type: "elite", count: 11 },
+    ],
+  },
+  {
+    number: 17,
+    monsterValue: 2030, // (30*10) + (35*8) + (22*25) + (15*60)
+    period: 19,
+    activeSpawnPoints: 3,
+    groups: [
+      { type: "basic", count: 30 },
+      { type: "scout", count: 35, packSize: 3 },
+      { type: "tough", count: 22 },
+      { type: "elite", count: 15 },
+    ],
+  },
+  {
+    number: 18,
+    monsterValue: 2239, // (35*10) + (38*8) + (25*25) + (16*60)
+    period: 20,
+    activeSpawnPoints: 3,
+    groups: [
+      { type: "basic", count: 35 },
+      { type: "scout", count: 38, packSize: 3 },
+      { type: "tough", count: 25 },
+      { type: "elite", count: 16 },
+    ],
+  },
+  {
+    number: 19,
+    monsterValue: 2620, // (35*10) + (40*8) + (30*25) + (20*60)
+    period: 21,
+    activeSpawnPoints: 3,
+    groups: [
+      { type: "basic", count: 35 },
+      { type: "scout", count: 40, packSize: 3 },
+      { type: "tough", count: 30 },
+      { type: "elite", count: 20 },
+    ],
+  },
+  {
+    number: 20,
+    monsterValue: 3060, // (40*10) + (45*8) + (32*25) + (25*60)
+    period: 22,
+    activeSpawnPoints: 3,
+    groups: [
+      { type: "basic", count: 40 },
+      { type: "scout", count: 45, packSize: 3 },
+      { type: "tough", count: 32 },
+      { type: "elite", count: 25 },
+    ],
+  },
   ],
 
   MAX_SPAWN_POINTS: 5,
@@ -214,8 +338,8 @@ export const CONFIG = {
     { col: 2, row: 10 },
     { col: 2, row: 12 },
     { col: 2, row: 11 },
-    null,
-    null,
+    { col: 2, row: 13 },
+    { col: 2, row: 14 },
   ],
   FORT: { col: 46, row: 19 },
   // --- Fort HP system ---
@@ -1013,7 +1137,7 @@ CONFIG.MAPS = [
   {
     id: "map1",
     label: "Map 1",
-    designWaveCount: 10,
+    designWaveCount: 20, // Aug 22: was 10, bumped after adding waves 11-20
     requiresMapId: null,
     bgImage: "Map1.png",
     defaultBlockedTiles: [],
