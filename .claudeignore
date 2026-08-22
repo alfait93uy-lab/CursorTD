@@ -4,7 +4,7 @@ vendor/
 .venv/
 dist/
 build/
-
+backup/
 # Ignore large/unnecessary assets
 *.png
 *.jpg

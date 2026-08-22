@@ -287,7 +287,7 @@ export const CONFIG = {
     marksman: {
       id: "marksman",
       label: "Marksman",
-      maxCount: 2, // base cap; skill tree can raise this later
+      maxCount: 0, // base cap — fully driven by the talent tree's Root node (see CONFIG.TALENT_TREES.marksman)
       radius: 26,
       range: 450,
       damage: 23,
@@ -538,18 +538,35 @@ CONFIG.TALENT_TREES = {
     ],
   },
   /**
-   * Marksman has no root/unlock node — it starts already placeable (base
-   * maxCount: 2, see TOWER_TYPES.marksman) and opens straight into 3
-   * parallel branches at tier 1. tier1's `unlock` gates tier2 (needs 5
-   * points spent in tier1), tier2 gates tier3 (5 more, 10 total), tier3
-   * gates tier4 (5 more, 15 total) — same uniform threshold as every other
-   * tree, chained tier-to-tier (see talents.js header comment).
+   * Marksman's Root node (like Slayer's) gates placement — its first point
+   * IS the unlock, base maxCount is 0 until then. Unlike Slayer it opens
+   * straight into 3 parallel branches at tier1 rather than one, once the
+   * root's unlock threshold (CONFIG.TALENT_ROOT_UNLOCK_THRESHOLD) is met.
+   * tier1's `unlock` gates tier2 (5 points spent in tier1), tier2 gates
+   * tier3 (5 more, 10 total), tier3 gates tier4 (5 more, 15 total) — same
+   * uniform threshold as every other tree, chained tier-to-tier (see
+   * talents.js header comment).
    *
    * NUMBERS BELOW ARE ASSUMPTIONS — the spec gave node names/branching but
    * no magnitudes. Flagged per-node; tune directly once play-tested.
    */
   marksman: {
     tiers: [
+      {
+        id: "root",
+        unlock: { type: "sum", threshold: CONFIG.TALENT_ROOT_UNLOCK_THRESHOLD },
+        nodes: [
+          {
+            id: "root",
+            label: "Marksman",
+            maxPoints: 3,
+            costs: [10, 20, 100],
+            unlocksTower: true, // spending the first point IS the tower unlock — no separate purchase
+            effect: { type: "towerCap", perPoint: 1 }, // each point = +1 max Marksman towers placeable
+            desc: "Commit to the Marksman's talent path. Each point unlocks (1st) and allows placing (each) one more Marksman tower.",
+          },
+        ],
+      },
       {
         id: "tier1",
         unlock: { type: "sum", threshold: CONFIG.TALENT_TIER_UNLOCK_THRESHOLD },
